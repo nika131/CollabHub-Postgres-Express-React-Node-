@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { number } from 'zod';
 
 
 export const registerUser = async (req: any, res: any) => {
