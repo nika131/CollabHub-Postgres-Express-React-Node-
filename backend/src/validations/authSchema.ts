@@ -1,4 +1,4 @@
-import { email, z } from "zod";
+import { z } from "zod";
 
 export const registerSchema = z.object({
     fullName: z.string().min(2, { message: "Name is too short" }).max(50, { message: "Name is too long" }),
