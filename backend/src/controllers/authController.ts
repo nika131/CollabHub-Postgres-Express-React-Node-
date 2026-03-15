@@ -1,9 +1,10 @@
 import { db } from '../db/dbConnection.js';
-import { users } from '../db/schema.js';
+import { profiles, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+
 
 
 export const registerUser = async (req: any, res: any) => {
@@ -19,13 +20,26 @@ export const registerUser = async (req: any, res: any) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        await db.insert(users).values({
-            fullName,
-            email,
-            hashedPassword: hashedPassword,
+        await db.transaction(async (tx) => {
+            const [newUser] = await tx.insert(users).values({
+                fullName,
+                email,
+                hashedPassword,
+            }).returning();
+
+            if (!newUser) {
+                throw new Error("failed to create user");
+            }
+
+            await tx.insert(profiles).values({
+                userId: newUser.id,
+                bio: "New CollabHub Member",
+                interests: [],
+                location: "Global",
+            });
         });
 
-        res.status(201).json({ message: "User created successfully!"})
+        res.status(201).json({ message: "User profile created successfully!"})
     }catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error. try again later."})
