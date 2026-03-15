@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import api from "../api/axios";
+import { Link } from "react-router-dom";
 
 export default function Register() {
     const [formData, setFormData] = useState({ fullName: '', email: '', password: ''});
@@ -44,6 +45,12 @@ export default function Register() {
                     <button type="submit" className="w-full rounded-lg bg-blue-600 py-3 font-bold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20">
                         Sign Up
                     </button>
+                    <p className="mt-6 text-center text-sm text-zinc-400">
+                        Already have an account?{" "}
+                        <Link to="/login" className="text-blue-500 hover:underline">
+                        Sign in
+                        </Link>
+                    </p>
                 </div>
             </form> 
         </div>

@@ -1,9 +1,8 @@
 import { profile } from 'node:console';
 import { db } from '../db/dbConnection.js';
-import { profiles } from '../db/schema.js';
+import { profiles, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { Request, Response } from "express";
-import { email } from 'zod';
 
 export const updateProfile = async (req: Request, res: Response) => {
     const { bio, location, interests, profilePicUrl } =req.body;
@@ -33,13 +32,28 @@ export const getMyProfile = async (req: Request, res: Response) => {
 
     try {
         const userData = await db.query.users.findFirst({
-            where: eq(userId.id, userId),
+            where: eq(users.id, userId),
             with: {
                 profile: true,
             }
         });
 
         if (!userData) return res.status(404).json({ message: "USer not found"});
+
+        if (!userData.profile) {
+            const [newProfile] = await db.insert(profiles).values({
+                userId: userId,
+                bio: "",
+                location: "",
+                interests: []
+            }).returning();
+            
+            return res.status(200).json({
+                fullName: userData.fullName,
+                email: userData.email,
+                ...newProfile
+            });
+        }
 
         res.status(200).json({
             fullName: userData.fullName,

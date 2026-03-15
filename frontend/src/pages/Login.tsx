@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import api from "../api/axios";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Login(){
     const [formData, setFormData] = useState({  email: '', password: ''});
     const [error, setError] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();        
@@ -12,6 +15,9 @@ export default function Login(){
             const response = await api.post('/auth/login', formData);
 
             localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user_info', JSON.stringify(response.data.user));
+
+            navigate('/dashboard');
 
             alert("Login Successful!");
         }catch (err: any){
@@ -40,6 +46,12 @@ export default function Login(){
                     <button type="submit" className="w-full rounded-lg bg-blue-600 py-3 font-bold hover:bg-blue-500 transition-colora">
                         Login
                     </button>
+                    <p className="mt-6 text-center text-sm text-zinc-400">
+                        Don't have an account?{" "}
+                        <Link to="/register" className="text-blue-500 hover:underline">
+                        sign up for CollabHub
+                        </Link>
+                    </p>
                 </div>
             </form>
         </div>

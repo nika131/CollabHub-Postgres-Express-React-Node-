@@ -6,6 +6,6 @@ const router = Router();
 
 router.put("/", authenticate, updateProfile);
 
-router.get("me", authenticate, getMyProfile);
+router.get("/me", authenticate, getMyProfile);
 
 export default router

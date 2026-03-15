@@ -1,8 +1,10 @@
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+console.log("JWT Secret Loaded:", !!process.env.JWT_SECRET);
 
 const app = express();
 
