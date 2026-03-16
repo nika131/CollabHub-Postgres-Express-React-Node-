@@ -1,9 +1,34 @@
 import { useEffect, useState } from "react";
-import api from "../api/axios"
+import api from "../api/axios";
+
 
 export default function Dashboard() {
     const [profile, setProfile] = useState<any>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [projects, setProjects] = useState<any[]>([]);
+    const [isAddingProject, setIsAddingProject] = useState(false);
+    const [newProject, setNewProject] = useState({title: '', description: '', repoUrl: '', techStack: ''});
+
+    const fetchProjects = async () => {
+        try {
+            const res = await api.get('/projects/my/all');
+            setProjects(res.data);
+
+        }catch (err) { console.error("FAiled to fetch projects", err); }
+    }
+
+    const handleAddProject = async () => {
+        try {
+            const payload = {
+                ...newProject,
+                techStack: newProject.techStack.split(',').map(s => s.trim())
+            };
+            await api.post('/projects', payload);
+            setIsAddingProject(false);
+            setNewProject({ title: '', description: '', repoUrl: '', techStack: ''});
+            fetchProjects();
+        }catch(err){ alert("Project upload failed"); }
+    }
 
     const [formData, setFormData] = useState({
         bio: '',
@@ -13,6 +38,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchProfile();
+        fetchProjects();
     }, []);
 
     const fetchProfile = async () => {
@@ -98,6 +124,8 @@ export default function Dashboard() {
                                 <h3 className="text-xl font-semibold">{profile?.fullName}</h3>
                                 <p className="text-zinc-500">{profile?.location || 'Earth'}</p>
                             </div>
+                        </div>
+                        
                             <div>
                                 <h4 className="text-zinc-400 text-sm uppercase tracking-wider mb-2">About</h4>
                                 <p className="text-zinc-200">{profile?.bio || "No bio set yet."}</p>
@@ -109,10 +137,81 @@ export default function Dashboard() {
                                     </span>
                                 ))}
                             </div>
-                        </div>
-                    </div>    
+                    </div>
                 )}
             </div>
+
+            <div className="mt-12 pt-8 border-t border-zinc-800">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold">My Projects</h3>
+                    <button
+                        onClick={() => setIsAddinfProject(!isAddingProject)}
+                        className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-bold transition"
+                        >{isAddingProject ? 'Cancel' : '+ Add Project'}
+                    </button>
+                </div>
+
+                {isAddingProject && (
+                    <div className="bg-zinc-800 p-4 rounded-xl mb-8 space-y-4 border border-zinc-700">
+                        <input  
+                        placeholder="Project Title"
+                        value={newProject.title}
+                        onChange={(e) => setNewProject({...newProject, title: e.target.value})}
+                        className="w-full bg-znc-900 border border-zinc-700 rounded-lg p-2 focus:outline-none"
+                        />
+                        <textarea 
+                        placeholder="Description"
+                        value={newProject.description}
+                        onChange={(e) => setNewProject({...newProject, description: e.target.value})}>
+                        className="w-full bg zinc-900 border border-zinc-700 rounded-lg p-2 h-20"    
+                        </textarea>
+                        <input  
+                        placeholder="Github Repo URL"
+                        value={newProject.repoUrl}
+                        onChange={(e) => setNewProject({...newProject, repoUrl: e.target.value})}
+                        className="w-full bg-znc-900 border border-zinc-700 rounded-lg p-2"
+                        />
+                        <input  
+                        placeholder="Tech Stack (comma separated: React, Node, ect.)"
+                        value={newProject.techStack}
+                        onChange={(e) => setNewProject({...newProject, techStack: e.target.value})}
+                        className="w-full bg-znc-900 border border-zinc-700 rounded-lg p-2"
+                        />
+                        <button
+                        onClick={handleAddProject}
+                        className="w-full bg-green-600 hover: bg-green-500 py-2 rounded-lg font-bold"
+                        >Publish Project
+                        </button>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {projects.length > 0 ?(
+                        projects.map((project) => (
+                            <div key={project.id} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl hover:border-zinc-600 transition">
+                                <h4 className="font-bold text-lg text-blue-400">{project.title}</h4>
+                                <p className="text-zinc-400 text-sm mt-2 line-camp-2">{project.description}</p>
+                                div className="flex flex-wrap gap-2 mt-4">
+                                {project.techStack?.map((tech: string) => (
+                                <span key={tech} className="text-[10px] bg-zinc-800 px-2 py-1 rounded border border-zinc-700">
+                                {tech}
+                                </span>
+                                ))}
+                            </div>
+                       </div>
+                       ))
+                      ) : (
+                    <p className="text-zinc-500 text-sm italic">You haven't added any projects yet.</p>
+                    )}
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+
+
         </div>
+
     );
-}
+}    
