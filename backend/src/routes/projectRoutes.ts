@@ -6,16 +6,13 @@ import { validate } from "../middleware/validate.js";
 
 const router = Router();
 
-router.post("/", authenticate, validate(createProjectSchema), createProject);
-
-router.get("/:id", authenticate, getProjectById);
-
 router.get("/my/all", authenticate, getMyProjects);
-
+router.post("/", authenticate, validate(createProjectSchema), createProject);
 router.get("/", authenticate, getAllProjects);
 
-router.patch("/:id", validate(createProjectSchema), authenticate, updateProject);
 
+router.get("/:id", authenticate, getProjectById);
+router.patch("/:id", validate(createProjectSchema), authenticate, updateProject);
 router.delete("/:id", validate(createProjectSchema), authenticate, DeleteProject);
 
 export default router;

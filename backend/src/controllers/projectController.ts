@@ -5,7 +5,7 @@ import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and } from "drizzle-orm";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
-    const { title, description } = req.body;
+    const { title, description, repoUrl, techStack, status } = req.body;
 
     if(!title) {
         return res.status(400).json({ message: "Title is required" });
@@ -15,6 +15,9 @@ export const createProject = async (req: AuthRequest, res: Response) => {
         const [newProject] = await db.insert(projects).values({
             title,
             description,
+            repoUrl,
+            techStack,
+            status,
             ownerId: Number(req.userId),
         }).returning();
 
@@ -100,11 +103,7 @@ export const getMyProjects = async (req: AuthRequest, res: Response) => {
 
     try {
         const myProjects = await db.select().from(projects).where(eq(projects.ownerId, userId));
-
-        if (myProjects.length === 0) {
-            return res.status(200).json({ message: "You have no projects yet", data: [] });
-        }
-
+        
         res.json(myProjects);
     } catch (error){
         res.status(500).json({ message: "Server error "});

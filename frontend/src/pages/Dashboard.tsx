@@ -30,6 +30,17 @@ export default function Dashboard() {
         }catch(err){ alert("Project upload failed"); }
     }
 
+    const handleDeleteProject = async (id: number) => {
+        if (!window.confirm("Delete this project?")) return;
+
+        try {
+            await api.delete(`/projects/${id}`);
+            fetchProjects();
+        } catch (err) {
+            alert("Delete Failed")
+        }
+    };
+
     const [formData, setFormData] = useState({
         bio: '',
         location: '',
@@ -145,7 +156,7 @@ export default function Dashboard() {
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold">My Projects</h3>
                     <button
-                        onClick={() => setIsAddinfProject(!isAddingProject)}
+                        onClick={() => setIsAddingProject(!isAddingProject)}
                         className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-bold transition"
                         >{isAddingProject ? 'Cancel' : '+ Add Project'}
                     </button>
@@ -157,61 +168,81 @@ export default function Dashboard() {
                         placeholder="Project Title"
                         value={newProject.title}
                         onChange={(e) => setNewProject({...newProject, title: e.target.value})}
-                        className="w-full bg-znc-900 border border-zinc-700 rounded-lg p-2 focus:outline-none"
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 focus:outline-none"
                         />
                         <textarea 
                         placeholder="Description"
                         value={newProject.description}
-                        onChange={(e) => setNewProject({...newProject, description: e.target.value})}>
-                        className="w-full bg zinc-900 border border-zinc-700 rounded-lg p-2 h-20"    
-                        </textarea>
+                        onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 h-20"
+                        />
                         <input  
                         placeholder="Github Repo URL"
                         value={newProject.repoUrl}
                         onChange={(e) => setNewProject({...newProject, repoUrl: e.target.value})}
-                        className="w-full bg-znc-900 border border-zinc-700 rounded-lg p-2"
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2"
                         />
                         <input  
                         placeholder="Tech Stack (comma separated: React, Node, ect.)"
                         value={newProject.techStack}
                         onChange={(e) => setNewProject({...newProject, techStack: e.target.value})}
-                        className="w-full bg-znc-900 border border-zinc-700 rounded-lg p-2"
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2"
                         />
                         <button
                         onClick={handleAddProject}
-                        className="w-full bg-green-600 hover: bg-green-500 py-2 rounded-lg font-bold"
+                         className="w-full bg-green-600 hover:bg-green-500 py-2 rounded-lg font-bold"
                         >Publish Project
                         </button>
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {projects.length > 0 ?(
                         projects.map((project) => (
                             <div key={project.id} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl hover:border-zinc-600 transition">
-                                <h4 className="font-bold text-lg text-blue-400">{project.title}</h4>
-                                <p className="text-zinc-400 text-sm mt-2 line-camp-2">{project.description}</p>
-                                div className="flex flex-wrap gap-2 mt-4">
-                                {project.techStack?.map((tech: string) => (
-                                <span key={tech} className="text-[10px] bg-zinc-800 px-2 py-1 rounded border border-zinc-700">
-                                {tech}
-                                </span>
-                                ))}
-                            </div>
-                       </div>
-                       ))
-                      ) : (
-                    <p className="text-zinc-500 text-sm italic">You haven't added any projects yet.</p>
-                    )}
-                            </div>
+                                <div>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-bold text-lg text-blue text-blue-400">{project.title}</h4>
+                                        <button
+                                            onClick={() => handleDeleteProject(project.id)}
+                                            className="text-zinc600 hover:text-red-500 transition-colors p-1"
+                                            title="Delete Project"
+                                            >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M3 6h18m-2 1-1 2-2 2h7c 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <p className="text-zinc-400 text-sm mt-2 line-clamp-2">{project.description}</p>
+
+                                <div className="flex flex-wrap gap-2 mt-4">
+                                    {project.techStack?.map((tech: string) => (
+                                    <span key={tech} className="text-[10px] bg-zinc-800 px-2 py-1 rounded border border-zinc-700">
+                                    {tech}
+                                    </span>
+                                     ))}
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-zinc-800/50 flex justify-between items-center"></div>
+                                    {project.repoUrl ? (
+                                    <a 
+                                        href={project.repoUrl} 
+                                        target="_blank" 
+                                        className="text-blue-400 hover:underline text-sm"
+                                    >
+                                        View Code
+                                    </a>
+                                    ) : (
+                                    <span className="text-[10px] text-zinc-700 italic">No repo link</span>
+                                    )}
+                                </div>
                         ))
+                    ) : (
+                        <p className="text-zinc-500 text-sm italic">You haven't added any projects yet.</p>
                     )}
+                    </div>
                 </div>
             </div>
-
-
-
-        </div>
-
     );
 }    

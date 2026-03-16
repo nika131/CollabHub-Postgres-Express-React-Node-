@@ -15,6 +15,8 @@ export const projects = pgTable("projects", {
     id: serial("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
+    repoUrl: text("repo_url"),
+    techStack: text("tech_stack").array(),
     status: text("status").default("active"),
     ownerId: integer("owner_id").references(() => users.id, { onDelete: 'cascade'}).notNull(),
     createdAt: timestamp("created_at").defaultNow(),
@@ -31,9 +33,17 @@ export const profiles = pgTable("profiles", {
     updatedAt: timestamp("updated_at").defaultNow(),
 })
 
-export const userRelations = relations(users, ({ one }) => ({
+export const userRelations = relations(users, ({ one, many }) => ({
     profile: one(profiles, {
         fields: [users.id],
         references: [profiles.userId],
     }),
+    projects: many(projects),
 }));
+
+export const projectsRelations = relations(projects, ({ one }) => ({
+    owner: one(users, {
+        fields: [projects.ownerId],
+        references: [users.id],
+    })
+}))
