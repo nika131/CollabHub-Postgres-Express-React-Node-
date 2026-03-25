@@ -13,6 +13,6 @@ router.get("/", authenticate, getAllProjects);
 
 router.get("/:id", authenticate, getProjectById);
 router.patch("/:id", validate(createProjectSchema), authenticate, updateProject);
-router.delete("/:id", validate(createProjectSchema), authenticate, DeleteProject);
+router.delete("/:id", authenticate, DeleteProject);
 
 export default router;

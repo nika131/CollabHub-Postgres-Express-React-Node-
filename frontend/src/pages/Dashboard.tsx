@@ -129,7 +129,7 @@ export default function Dashboard() {
                     <div className="space-y-6">
                         <div className="flex items-center space-x-4">
                             <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center text-2xl font-bold">
-                                {profile?.fullName?.charAt(0)}
+                                {profile?.fullName ? profile.fullName.charAt(0) : "?"}
                             </div>
                             <div>
                                 <h3 className="text-xl font-semibold">{profile?.fullName}</h3>
@@ -200,19 +200,15 @@ export default function Dashboard() {
                     {projects.length > 0 ?(
                         projects.map((project) => (
                             <div key={project.id} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl hover:border-zinc-600 transition">
-                                <div>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h4 className="font-bold text-lg text-blue text-blue-400">{project.title}</h4>
-                                        <button
-                                            onClick={() => handleDeleteProject(project.id)}
-                                            className="text-zinc600 hover:text-red-500 transition-colors p-1"
-                                            title="Delete Project"
-                                            >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M3 6h18m-2 1-1 2-2 2h7c 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-bold text-lg text-blue-400">{project.title}</h4>
+                                    <button
+                                        onClick={() => handleDeleteProject(project.id)}
+                                        className="text-zinc-600 hover:text-red-500 transition-colors p-1"
+                                        title="Delete Project"
+                                        >
+                                        X
+                                    </button>
                                 </div>
                                 
                                 <p className="text-zinc-400 text-sm mt-2 line-clamp-2">{project.description}</p>
@@ -224,7 +220,7 @@ export default function Dashboard() {
                                     </span>
                                      ))}
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-zinc-800/50 flex justify-between items-center"></div>
+                                <div className="mt-6 pt-4 border-t border-zinc-800/50 flex justify-between items-center">
                                     {project.repoUrl ? (
                                     <a 
                                         href={project.repoUrl} 
@@ -234,9 +230,10 @@ export default function Dashboard() {
                                         View Code
                                     </a>
                                     ) : (
-                                    <span className="text-[10px] text-zinc-700 italic">No repo link</span>
+                                        <span className="text-[10px] text-zinc-700 italic">No repo link</span>
                                     )}
                                 </div>
+                            </div>
                         ))
                     ) : (
                         <p className="text-zinc-500 text-sm italic">You haven't added any projects yet.</p>
