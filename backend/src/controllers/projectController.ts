@@ -1,8 +1,10 @@
 import type { Response } from "express";
 import { db } from "../db/dbConnection.js";
-import { projects } from "../db/schema.js";
+import { projects, users } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and } from "drizzle-orm";
+import { title } from "node:process";
+import { stat } from "node:fs";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
     const { title, description, repoUrl, techStack, status } = req.body;
@@ -74,7 +76,17 @@ export const updateProject = async ( req: AuthRequest, res: Response) => {
 
 export const getAllProjects = async (req: AuthRequest, res: Response) => {
     try {
-        const allProjects = await db.select().from(projects);
+        const allProjects = await db.select({
+            id: projects.id,
+            title: projects.title,
+            description: projects.description,
+            repoUrl: projects.repoUrl,
+            techStack: projects.techStack,
+            status: projects.status,
+            createdAt: projects.createdAt,
+            ownerName: users.fullName,
+        }).from(projects)
+        .leftJoin(users, eq(projects.ownerId, users.id));
         res.json(allProjects)
     } catch (error){
         res.status(500).json({ message: "Server error"});

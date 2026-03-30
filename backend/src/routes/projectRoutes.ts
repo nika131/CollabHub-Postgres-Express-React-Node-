@@ -8,7 +8,7 @@ const router = Router();
 
 router.get("/my/all", authenticate, getMyProjects);
 router.post("/", authenticate, validate(createProjectSchema), createProject);
-router.get("/", authenticate, getAllProjects);
+router.get("/all", authenticate, getAllProjects);
 
 
 router.get("/:id", authenticate, getProjectById);
