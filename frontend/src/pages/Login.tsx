@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import api from "../api/axios";
 import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Login(){
     const [formData, setFormData] = useState({  email: '', password: ''});
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+    const flashMessage = location.state?.message;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();        
@@ -29,6 +31,8 @@ export default function Login(){
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
             <form onSubmit={handleSubmit} className="w-full max-w-md rounded-2xl bg-zinc-900 p-8 shadow-2xl border border zinc-800">    
                 <h2 className="text3xl font-bold text-blue-500 mb-6">Welcome Back</h2>
+                
+                {flashMessage && <p className="mb-4 text-blue-400 bg-blue-900/20 p-3 rounded-lg text-sm">{flashMessage}</p>}
 
                 {error && <p className="mb-4 text-red-400 bg-red-900/20 p-3 rounded-lg text-sm">{error}</p>}
 

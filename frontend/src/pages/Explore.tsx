@@ -42,7 +42,7 @@ export default function Explore() {
                             <div key={project.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl hover:border-zinc-700 transaction flex flex-col justify-between">
                                 <div>
                                     <h4 className="font-bold text-lg text-blue-400">{project.title}</h4>
-                                    <p className="text-zinc-500 text-xs mb-2">By : {project.ownerName || "Anonymous"}</p>
+                                    <p className="text-zinc-500 text-xs mb-2">By s: {project.ownerName || "Anonymous"}</p>
                                     <p className="text-zinc-400 text-sm line-clamp-3">{project.description}</p>
 
                                     <div className="flex flex-wrap gap-2 mt-4">

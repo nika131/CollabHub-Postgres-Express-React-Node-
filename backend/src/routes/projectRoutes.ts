@@ -12,7 +12,7 @@ router.get("/all", authenticate, getAllProjects);
 
 
 router.get("/:id", authenticate, getProjectById);
-router.patch("/:id", validate(createProjectSchema), authenticate, updateProject);
+router.patch("/:id", authenticate, validate(createProjectSchema), updateProject);
 router.delete("/:id", authenticate, DeleteProject);
 
 export default router;
