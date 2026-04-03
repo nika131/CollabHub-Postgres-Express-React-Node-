@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
+import { Link } from "react-router-dom";
 
 export default function Explore() {
     const [projects, setProjects ] = useState<any[]>([]);
@@ -41,7 +42,9 @@ export default function Explore() {
                         filteredProjects.map((project) => (
                             <div key={project.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl hover:border-zinc-700 transaction flex flex-col justify-between">
                                 <div>
-                                    <h4 className="font-bold text-lg text-blue-400">{project.title}</h4>
+                                    <Link to={`/projects/${project.id}`} className="hover:underline">
+                                        <h4 className="font-bold text-lg text-blue-400">{project.title}</h4>
+                                    </Link>
                                     <p className="text-zinc-500 text-xs mb-2">By s: {project.ownerName || "Anonymous"}</p>
                                     <p className="text-zinc-400 text-sm line-clamp-3">{project.description}</p>
 

@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Navbar from "./pages/Navbar";
 import Explore from "./pages/Explore";
 import ProtectedRoutes from "./components/ProtectedRoute";
+import ProjectDetails from "./pages/ProjectDetails";
 
 function App() {
   return (
@@ -17,9 +18,10 @@ function App() {
           <Route element={<ProtectedRoutes />} >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects" element={<Explore />} />
+            <Route path="/projects/:id" element={<ProjectDetails />} />
           </Route>
           
-          <Route path="/*" element={<Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
     </Router>
   );

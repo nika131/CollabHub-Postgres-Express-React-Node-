@@ -4,7 +4,6 @@ import { projects, users } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and } from "drizzle-orm";
 import { title } from "node:process";
-import { stat } from "node:fs";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
     const { title, description, repoUrl, techStack, status } = req.body;
@@ -121,3 +120,33 @@ export const getMyProjects = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: "Server error "});
     }
 };
+
+export const getProjectAndUserInfobyId = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const [projectAndUserInfo] = await db.select({
+            id: projects.id,
+            title: projects.title,
+            description: projects.description,
+            repoUrl: projects.repoUrl,
+            techStack: projects.techStack,
+            status: projects.status,
+            createdAt: projects.createdAt,
+            ownerName: users.fullName,
+            ownerEmail: users.email,
+        })
+        .from(projects)
+        .leftJoin(users, eq(projects.ownerId, users.id))
+        .where(eq(projects.id, Number(id)))
+        .limit(1);
+
+        if (!projectAndUserInfo) {
+            return res.status(404).json({ message: "Project not found"});
+        }
+
+        res.json(projectAndUserInfo);
+    }catch (error){
+        res.status(500).json({message: "Server error"});
+    }
+}

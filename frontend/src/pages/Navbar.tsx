@@ -21,7 +21,7 @@ export default function Navbar() {
                     <Link to="/dashboard" className="text-zinc-400 hover:text-white transition">My Profile</Link>
                     <button
                        onClick={handleLogout}
-                       className="text-sm bg-zinc-800 hover:bg-red-900/30 hover:text-red-500 px-4 py-2 rounded-lg"
+                       className="text-sm text-zinc-400 bg-zinc-800 hover:bg-red-900/30 hover:text-red-500 px-4 py-2 rounded-lg"
                        >Logout
                        </button>
                 </div>
