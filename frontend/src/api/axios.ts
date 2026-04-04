@@ -19,11 +19,13 @@ api.interceptors.response.use(
         const status = error.response?.status;
         const errorMessage = error.response?.data?.message || "An unexpected error occured";
 
-        console.groupCollapsed(`API Error: [${error.config?.method?.toUpperCase()}] ${error.config?.url}`);
-        console.error("Status Code:", status);
-        console.error("Backend Message:", errorMessage);
-        console.error("Full Error Object:", error);
-        console.groupEnd();
+        if(status !== 400) {
+            console.groupCollapsed(`API Error: [${error.config?.method?.toUpperCase()}] ${error.config?.url}`);
+            console.error("Status Code:", status);
+            console.error("Backend Message:", errorMessage);
+            console.error("Full Error Object:", error);
+            console.groupEnd();
+        }
 
         if (status === 401 || status === 403) {
             toast.error("Security Alert: " + errorMessage);
@@ -33,6 +35,8 @@ api.interceptors.response.use(
             setTimeout(() => {
                 window.location.href = '/login';
             }, 2000);
+        }else if (status === 400) {
+
         }else {
             toast.error("Error: " + errorMessage);
         }

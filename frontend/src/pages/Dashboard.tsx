@@ -26,18 +26,33 @@ export default function Dashboard() {
                 techStack: newProject.techStack.split(',').map(s => s.trim())
             };
             await api.post('/projects', payload);
-
+ 
             toast.success("Project launched!")
             setIsAddingProject(false);
             setNewProject({ title: '', description: '', repoUrl: '', techStack: ''});
             fetchProjects();
         }catch(err: any){ 
-            if (err.response?.status === 400 && err.response?.data?.console.errors){
+            const responseData = err.response?.data;
+
+
+            if (err.response?.status === 400 && responseData?.errors){
                 const errorMap: Record<string, string> = {};
-                err.response.data.errors.forEach((e: any) => {
-                    errorMap[e.path[0]] = e.message;
+                
+                Object.entries(responseData.errors).forEach(([field, messages]: [string, any]) => {
+                    if (Array.isArray(messages) && messages.length > 0) {
+                        errorMap[field] = messages[0];
+                    } else if (typeof messages === 'string') {
+                        errorMap[field] = messages;
+                    }
                 });
+
                 setFieldErrors(errorMap);
+            } else {
+                console.error("Non-array error recived: ", responseData);
+
+                if (responseData?.message) {
+                    toast.error("Error: " + responseData.message);
+                }
             }
         }
     }
@@ -70,7 +85,7 @@ export default function Dashboard() {
             setFormData({
                 bio: res.data.bio || '',
                 location: res.data.location || '',
-                interests: res.data.interests?.join(', ') || '',                });
+                interests: res.data.interests?.join(', ') || ''});
         }catch (err) {
             console.error(err);
         }

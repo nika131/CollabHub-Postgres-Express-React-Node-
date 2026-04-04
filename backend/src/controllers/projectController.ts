@@ -3,7 +3,6 @@ import { db } from "../db/dbConnection.js";
 import { projects, users } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and } from "drizzle-orm";
-import { title } from "node:process";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
     const { title, description, repoUrl, techStack, status } = req.body;
