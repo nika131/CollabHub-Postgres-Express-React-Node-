@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const api = axios.create({
     baseURL: 'http://localhost:3000/api',
@@ -15,15 +16,27 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response, 
     (error) => {
+        const status = error.response?.status;
         const errorMessage = error.response?.data?.message || "An unexpected error occured";
 
-        if (error.response?.status === 401 || error.response?.status === 403) {
-            alert("Security Alert: " + errorMessage);
+        console.groupCollapsed(`API Error: [${error.config?.method?.toUpperCase()}] ${error.config?.url}`);
+        console.error("Status Code:", status);
+        console.error("Backend Message:", errorMessage);
+        console.error("Full Error Object:", error);
+        console.groupEnd();
+
+        if (status === 401 || status === 403) {
+            toast.error("Security Alert: " + errorMessage);
             localStorage.removeItem('token');
-            window.location.href = '/login';
-        }else{
-            alert("Error: " + errorMessage);
+            localStorage.removeItem('user_info');
+
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+        }else {
+            toast.error("Error: " + errorMessage);
         }
+
         return Promise.reject(error);
     }
 )

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
+import toast from "react-hot-toast";
 
 
 export default function Dashboard() {
@@ -8,6 +9,7 @@ export default function Dashboard() {
     const [projects, setProjects] = useState<any[]>([]);
     const [isAddingProject, setIsAddingProject] = useState(false);
     const [newProject, setNewProject] = useState({title: '', description: '', repoUrl: '', techStack: ''});
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const fetchProjects = async () => {
         try {
@@ -24,21 +26,30 @@ export default function Dashboard() {
                 techStack: newProject.techStack.split(',').map(s => s.trim())
             };
             await api.post('/projects', payload);
+
+            toast.success("Project launched!")
             setIsAddingProject(false);
             setNewProject({ title: '', description: '', repoUrl: '', techStack: ''});
             fetchProjects();
-        }catch(err){ alert("Project upload failed"); }
+        }catch(err: any){ 
+            if (err.response?.status === 400 && err.response?.data?.console.errors){
+                const errorMap: Record<string, string> = {};
+                err.response.data.errors.forEach((e: any) => {
+                    errorMap[e.path[0]] = e.message;
+                });
+                setFieldErrors(errorMap);
+            }
+        }
     }
 
     const handleDeleteProject = async (id: number) => {
-        if (!window.confirm("Delete this project?")) return;
+        if (!window.confirm("Are you sure? This action is permanent.")) return;
 
         try {
             await api.delete(`/projects/${id}`);
+            toast.success("Project deleted successfully!");
             fetchProjects();
-        } catch (err) {
-            alert("Delete Failed")
-        }
+        } catch (err) { }
     };
 
     const [formData, setFormData] = useState({
@@ -72,16 +83,38 @@ export default function Dashboard() {
                 interests: formData.interests.split(',').map(i => i.trim()).filter(i => i !== '')
             };
             await api.put('/profiles', payload);
+
+            toast.success("Profile updated successfully!");
             setIsEditing(false);
             fetchProfile();
-        }catch (err) { alert("Update failed"); }
+        }catch (err) { 
+            console.error("Profile update error caught in component: ", err);
+        }
     }
+
+    interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+        label?: string;
+        error?: string;
+    }
+
+    const FormInput = ({ label, error, ...props }: FormInputProps) => (
+        <div className="w-full">
+            {label && <label className="block text-sm text-zinc-400 mb-1">{label}</label>}
+            <input 
+                {...props} 
+                className={`w-full bg-zinc-900 border rounded-lg p-2 outline-none transition-all focus:ring-1 focus:ring-blue-500 ${
+                    error ? 'border-red-500' : 'border-zinc-700'
+                }`} 
+            />
+            {error && <p className="text-red-500 text-[10px] mt-1 italic">{error}</p>}
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8"> 
             <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">My Profile</h2>
+                    <h2 className="text-2xl font-bold text-red">My Profile</h2>
                     <button 
                         onClick={() => setIsEditing(!isEditing)}
                         className="text-sm bg-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition">
@@ -164,29 +197,29 @@ export default function Dashboard() {
 
                 {isAddingProject && (
                     <div className="bg-zinc-800 p-4 rounded-xl mb-8 space-y-4 border border-zinc-700">
-                        <input  
-                        placeholder="Project Title"
-                        value={newProject.title}
-                        onChange={(e) => setNewProject({...newProject, title: e.target.value})}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 focus:outline-none"
+                        <FormInput
+                            placeholder="Project Title"
+                            value={newProject.title}
+                            onChange={(e) => setNewProject({...newProject, title: e.target.value})}
+                            error={fieldErrors.title}
                         />
-                        <textarea 
-                        placeholder="Description"
-                        value={newProject.description}
-                        onChange={(e) => setNewProject({...newProject, description: e.target.value})}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 h-20"
+                        <FormInput
+                            placeholder="Description"
+                            value={newProject.description}
+                            onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+                            error={fieldErrors.description}
                         />
-                        <input  
-                        placeholder="Github Repo URL"
-                        value={newProject.repoUrl}
-                        onChange={(e) => setNewProject({...newProject, repoUrl: e.target.value})}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2"
+                        <FormInput
+                            placeholder="Github Repo URL"
+                            value={newProject.repoUrl}
+                            onChange={(e) => setNewProject({...newProject, repoUrl: e.target.value})}
+                            error={fieldErrors.repoUrl}
                         />
-                        <input  
-                        placeholder="Tech Stack (comma separated: React, Node, ect.)"
-                        value={newProject.techStack}
-                        onChange={(e) => setNewProject({...newProject, techStack: e.target.value})}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2"
+                        <FormInput
+                            placeholder="Tech Stack (comma separated: React, Node, ect.)"
+                            value={newProject.techStack}
+                            onChange={(e) => setNewProject({...newProject, techStack: e.target.value})}
+                            error={fieldErrors.techStack}
                         />
                         <button
                         onClick={handleAddProject}

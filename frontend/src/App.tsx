@@ -6,10 +6,12 @@ import Navbar from "./pages/Navbar";
 import Explore from "./pages/Explore";
 import ProtectedRoutes from "./components/ProtectedRoute";
 import ProjectDetails from "./pages/ProjectDetails";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
     <Router>
+      <Toaster position="bottom-right" reverseOrder={false} />
       <Navbar/>
         <Routes>
           <Route path="/register" element={<Register />} />

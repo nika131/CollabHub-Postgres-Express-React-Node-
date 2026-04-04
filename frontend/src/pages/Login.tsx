@@ -20,8 +20,6 @@ export default function Login(){
             localStorage.setItem('user_info', JSON.stringify(response.data.user));
 
             navigate('/dashboard');
-
-            alert("Login Successful!");
         }catch (err: any){
             setError(err.response?.data?.message || "Invalid Credentials");
         }
@@ -31,7 +29,7 @@ export default function Login(){
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
             <form onSubmit={handleSubmit} className="w-full max-w-md rounded-2xl bg-zinc-900 p-8 shadow-2xl border border zinc-800">    
                 <h2 className="text3xl font-bold text-blue-500 mb-6">Welcome Back</h2>
-                
+
                 {flashMessage && <p className="mb-4 text-blue-400 bg-blue-900/20 p-3 rounded-lg text-sm">{flashMessage}</p>}
 
                 {error && <p className="mb-4 text-red-400 bg-red-900/20 p-3 rounded-lg text-sm">{error}</p>}
