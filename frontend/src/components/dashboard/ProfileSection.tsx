@@ -54,7 +54,7 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
                 <button 
                     onClick={() => setIsEditing(!isEditing)}
                     disabled={loading}
-                    className="text-sm bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-lg transition">
+                    className="text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white px-4 py-2 rounded-lg transition border border-zinc-700">
                     {isEditing ? 'Cancel' : 'Edit Profile'}
                 </button>
             </div>

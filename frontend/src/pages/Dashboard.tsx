@@ -38,7 +38,7 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8"> 
-            <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
+            <div className="max-w-6xl space-y-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
                 
                 {/* --- 1. PROFILE COMPONENT --- */}
                 <ProfileSection
@@ -78,6 +78,7 @@ export default function Dashboard() {
                                 key={project.id}
                                 project={project}
                                 onDelete={fetchProjects}
+                                showDelete={true}
                             />
                         ))
                     ) : (
