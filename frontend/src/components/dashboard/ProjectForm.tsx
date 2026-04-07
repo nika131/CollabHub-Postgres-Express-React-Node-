@@ -3,6 +3,8 @@ import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { FormInput } from "../common/FormInput";
 import { TagInput } from "../common/TagInput";
+import { TECH_SKILLS } from "../../constants/techSkills";
+import { FormTextArea } from "../common/FormTextArea";
 
 interface ProjectFormProps {
     onSuccess: () => void;
@@ -68,12 +70,13 @@ export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
                 error={fieldErrors.title}
                 disabled={loading}
             />            
-            <FormInput
+            <FormTextArea
                 placeholder="Description"
                 value={newProject.description}
                 onChange={(e) => setNewProject({...newProject, description: e.target.value})}
                 error={fieldErrors.description}
                 disabled={loading}
+                rows={4}
             />
             <FormInput
                 placeholder="Github Repo URL"
@@ -85,6 +88,7 @@ export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
             <TagInput
                 tags={newProject.techStack}
                 setTags={(tags) => setNewProject({ ...newProject, techStack: tags})}
+                options={TECH_SKILLS}
                 placeholder="Tech Stack (Type and press enter)"
                 error={fieldErrors.techStack}
             />
