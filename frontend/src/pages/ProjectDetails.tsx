@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { JoinRequestButton } from "../components/JoinRequestButton";
 
 export default function ProjectDetailes() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [project, setProject] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+
+    const currentUser = JSON.parse(localStorage.getItem('user_info') || '{}');
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -24,6 +27,8 @@ export default function ProjectDetailes() {
 
     if (loading) return <div className="text-white p-10">Loading projects. </div>
     if (!project) return <div className="text-white p-10">Project not found.</div>
+
+    const isOwner = currentUser.id === project.ownerId;
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8">
@@ -63,9 +68,18 @@ export default function ProjectDetailes() {
                         <a href={project.repoUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
                             View in GitHub
                         </a>
-                        <button className="bg-zinc-800 hover:bg-zinc-700 text-center py-3 rounded-xl font-bold border border-zinc-700 transition">
-                            Request to Join
-                        </button>
+                        <div className="mt-8 pt-8border-t border-zinc-800">
+                            {isOwner ? (
+                                <div className="w-full bg-zinc-800/50 text-zinc-400 py-3 rounded-xl text-center border border-zinc-800">
+                                    You are owner of this project
+                                </div>
+                            ) : (
+                                <JoinRequestButton
+                                    projectId={project.id}
+                                    initialStatus={project.userStatus || 'none'}
+                                />    
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

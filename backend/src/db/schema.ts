@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, varchar, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, varchar, integer, pgEnum } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -30,6 +30,18 @@ export const profiles = pgTable("profiles", {
     interests: text("interests").array(),
     profilePicUrl: text("profile_pic_url"),
     updatedAt: timestamp("updated_at").defaultNow(),
+})
+
+
+export const statusEnum = pgEnum('application_status', ['pending', 'accepted', 'rejected']);
+
+export const applications = pgTable('application', {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id').references(() => projects.id, {onDelete: 'cascade'}).notNull(),
+    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    status: statusEnum('status').default('pending').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+
 })
 
 export const userRelations = relations(users, ({ one, many }) => ({
