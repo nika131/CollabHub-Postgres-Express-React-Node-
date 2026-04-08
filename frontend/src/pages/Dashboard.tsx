@@ -3,6 +3,7 @@ import api from "../api/axios";
 import { ProjectCard } from "../components/dashboard/ProjectCard";
 import { ProjectForm } from "../components/dashboard/ProjectForm";
 import { ProfileSection } from "../components/dashboard/ProfileSection";
+import { IncomingRequests } from "../components/dashboard/IncomingRequests";
 
 
 export default function Dashboard() {
@@ -88,6 +89,12 @@ export default function Dashboard() {
                     )}
                     </div>
                 </div>
+
+                
+                <div>
+                    <IncomingRequests/>
+                </div>
+
             </div>
         </div>
     );
