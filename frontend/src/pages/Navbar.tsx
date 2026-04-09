@@ -1,10 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Bell } from 'lucide-react';
 import { useState } from "react";
+import { NotificationBell } from "../components/NotificationBell";
 
 export default function Navbar() {
-    const [unreadCount, setUnreadCount] = useState(0);
-
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
 
@@ -23,19 +21,14 @@ export default function Navbar() {
                     <div className="flex items-center space-x-6">
                         <Link to="/projects" className="text-zinc-400 hover:text-white transition">Explore</Link>
                         <Link to="/dashboard" className="text-zinc-400 hover:text-white transition">My Profile</Link>
+                        
+                        <NotificationBell />
+
                         <button
-                        onClick={handleLogout}
-                        className="text-sm text-zinc-400 bg-zinc-800 hover:bg-red-900/30 hover:text-red-500 px-4 py-2 rounded-lg"
-                        >Logout
+                            onClick={handleLogout}
+                            className="text-sm text-zinc-400 bg-zinc-800 hover:bg-red-900/30 hover:text-red-500 px-4 py-2 rounded-lg"
+                            >Logout
                         </button>
-                        <div className="relative cursor-pointer hover:text-blue-500 transition">
-                            <span className="text-xl"><Bell color="white" size={48}/></span>
-                            {unreadCount > 0 && (
-                                <span className="absolute -top-1 -right-1 br-red-500 text-[10px] rounded-full flex items-center font-bold">
-                                    {unreadCount}
-                                </span>
-                            )}
-                        </div>
                     </div>
                 )};
                 

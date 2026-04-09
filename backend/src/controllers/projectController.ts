@@ -1,6 +1,6 @@
 import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
-import { projects, users, applications } from "../db/schema.js";
+import { projects, users, applications, notifications } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and } from "drizzle-orm";
 
@@ -188,6 +188,12 @@ export const joinRequest = async (req: AuthRequest, res: Response) => {
             status: 'pending'
         });
 
+        await db.insert(notifications).values({
+            userId: project.ownerId,
+            type: 'new_request',
+            message: `SomeOne requested to join your project: ${project.title}`
+        });
+
         res.status(201).json({ message: "Application sent successfully" });
     }catch (err) {
         res.status(500).json({ message: "Server error" });
@@ -234,7 +240,8 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
 
     try {
         const [applicationData] = await db.select({
-            ownerId: projects.ownerId
+            ownerId: projects.ownerId,
+            userId: applications.userId
         })
         .from(applications)
         .innerJoin(projects, eq(applications.projectId, projects.id))
@@ -248,6 +255,14 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
         await db.update(applications)
             .set({ status })
             .where(eq(applications.id, Number(applicationId)));
+
+        await db.insert(notifications).values({
+            userId: applicationData.userId,
+            type: status,
+            message: status === 'accepted'
+                ? `You have been accepted to join the project!`
+                :  `Your request to join the project was declined`
+        })
 
         res.json({ message: `Application ${status} successfully` });
     }catch (err) {

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, varchar, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, varchar, integer, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -43,6 +43,15 @@ export const applications = pgTable('application', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
 
 })
+
+export const notifications = pgTable('notifications', {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    type: text('type').notNull(),
+    message: text('message').notNull(),
+    isRead: boolean('is_read').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
 export const userRelations = relations(users, ({ one, many }) => ({
     profile: one(profiles, {

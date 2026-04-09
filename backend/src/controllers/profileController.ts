@@ -1,4 +1,3 @@
-import { profile } from 'node:console';
 import { db } from '../db/dbConnection.js';
 import { profiles, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
