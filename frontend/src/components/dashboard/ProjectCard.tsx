@@ -32,7 +32,7 @@ export const ProjectCard = ({ project, onDelete, showDelete = false }: any) => {
                     }
                 </div>
 
-                <p className="text-zinc-500 text-xs mb-2">By s: {project.ownerName || "Anonymous"}</p>
+                <p className="text-zinc-500 text-xs mb-2">By : {project.ownerName || "Anonymous"}</p>
                 <p className="text-zinc-400 text-sm line-clamp-3">{project.description}</p>
 
                 <div className="flex flex-wrap gap-2 mt-4">

@@ -20,3 +20,6 @@ export const createProjectSchema = z.object({
     status: z.enum(["active", "compleeted", "looking-for-collab"])
         .default("active"),
 });
+
+
+export const updateProjectSchema = createProjectSchema.partial();

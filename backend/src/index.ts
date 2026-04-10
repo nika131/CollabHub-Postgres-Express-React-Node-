@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js"
+import { globalErrorHandler } from './middleware/errorMiddleware.js';
 
 console.log("JWT Secret Loaded:", !!process.env.JWT_SECRET);
 
@@ -22,6 +23,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/projects", profileRoutes);
+
+app.use(globalErrorHandler)
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -90,7 +90,7 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                
+                {/* --- 5. PEOJECT JOIN REQUESTS --- */}
                 <div>
                     <IncomingRequests/>
                 </div>
