@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, varchar, integer, pgEnum, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, varchar, integer, pgEnum, boolean, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -19,7 +19,9 @@ export const projects = pgTable("projects", {
     status: text("status").default("active"),
     ownerId: integer("owner_id").references(() => users.id, { onDelete: 'cascade'}).notNull(),
     createdAt: timestamp("created_at").defaultNow(),
-})
+}, (table) => [
+    index("project_owner_idx").on(table.ownerId)
+])
 
 
 export const profiles = pgTable("profiles", {
@@ -42,7 +44,11 @@ export const applications = pgTable('application', {
     status: statusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 
-})
+}, (table) => [
+    index("app_project_idx").on(table.projectId),
+    index("app_user_idx").on(table.userId)
+    
+])
 
 export const notifications = pgTable('notifications', {
     id: serial('id').primaryKey(),
@@ -51,7 +57,9 @@ export const notifications = pgTable('notifications', {
     message: text('message').notNull(),
     isRead: boolean('is_read').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => [
+    index("notif_user_idx").on(table.userId)
+]);
 
 export const userRelations = relations(users, ({ one, many }) => ({
     profile: one(profiles, {

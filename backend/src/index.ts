@@ -11,8 +11,10 @@ console.log("JWT Secret Loaded:", !!process.env.JWT_SECRET);
 
 const app = express();
 
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: clientUrl,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -23,7 +25,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/projects", profileRoutes);
 
 app.use(globalErrorHandler)
 

@@ -2,12 +2,14 @@ import { db } from '../db/dbConnection.js';
 import { profiles, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { AuthRequest } from "../middleware/authMiddleware.js";
+import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { email } from 'zod';
 
 
 
-export const registerUser = async (req: any, res: any) => {
+export const registerUser = async (req: Request, res: Response) => {
     const { fullName, email, password } = req.body;
 
     try {
@@ -46,7 +48,7 @@ export const registerUser = async (req: any, res: any) => {
     }
 }
 
-export const loginUser = async (req: any, res: any) => {
+export const loginUser = async (req: Request, res: Response) => {
     const { email, password } = req.body;
     
     try{
@@ -78,16 +80,22 @@ export const loginUser = async (req: any, res: any) => {
     };
 }
 
-export const getMe = async (req: AuthRequest, res: any) => {
+export const getMe = async (req: AuthRequest, res: Response) => {
     try {
-        const [user] = await db.select().from(users).where(eq(users.id, Number(req.userId)));
+        const [user] = await db.select({
+            id: users.id,
+            fullName: users.fullName,
+            email: users.email,
+            createdAt: users.createdAt
+        })
+        .from(users)
+        .where(eq(users.id, Number(req.userId)));
 
         if (!user) {
             return res.status(404).json({ message: "User not found!" });
         }
-
-        const { hashedPassword, ...userWithouthashedPassword } = user;
-        res.json(userWithouthashedPassword);
+        
+        res.json(user);
     }catch (error) {
         res.status(500).json({ message: "Server error. try again later."})
     }
