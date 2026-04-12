@@ -9,7 +9,7 @@ export default function Explore() {
     useEffect(() => {
         fetchAllProjects();
     }, []);
-    
+
     const fetchAllProjects = async () => {
         try {
             const res = await api.get('/projects/all');
@@ -18,7 +18,6 @@ export default function Explore() {
             console.error("Failed to fetch explore feed", err);
         }
     };
-    fetchAllProjects();
 
     const filteredProjects = projects.filter(p => 
         p.title.toLowerCase().includes(search.toLowerCase()) || 

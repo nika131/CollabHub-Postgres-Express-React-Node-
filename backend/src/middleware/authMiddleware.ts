@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { db } from "../db/dbConnection.js";
 import { projects } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
+import { AppError } from "../utils/AppError.js";
+import { catchAsync } from "../utils/catchAsync.js";
 
 export interface AuthRequest extends Request {
     userId?: string;
@@ -30,21 +32,16 @@ export const isProjectOwner = async(req: AuthRequest, res: Response, next: NextF
     const { id } = req.params;
     const userId = Number(req.userId);
 
-    try{
-        const checkIfOwner = await db.select()
-            .from(projects)
-            .where(and(
-                eq(projects.id, Number(id)), 
-                eq(projects.ownerId, userId)))
-            .limit(1);
+    const checkIfOwner = await db.select()
+        .from(projects)
+        .where(and(
+        eq(projects.id, Number(id)), 
+        eq(projects.ownerId, userId)))
+    .limit(1);
 
-        if (!checkIfOwner){
-            return res.status(403).json({ message: "Forbidden: You do not own this project or it does not exist." });
-        }
-        
-        next();
-    }catch(err){
-        console.error(err);
-        res.status(500).json({ message: "Server error" });
+    if (checkIfOwner.length === 0){
+       throw new AppError("Forbidden: You do not own this project or it does not exist.", 403);
     }
+        
+    next();
 }

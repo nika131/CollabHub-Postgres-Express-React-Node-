@@ -6,6 +6,8 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+    (config as any).metadata = { startTime: performance.now() };
+
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -14,7 +16,11 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-    (response) => response, 
+    (response) => {
+        const duration = Math.round(performance.now() - (response.config as any).metadata.startTime)
+        console.log(`%c[API Success] ${response.config.method?.toUpperCase()} ${response.config.url} - ${duration}ms`, 'color: #4abe80; font-weight: bold;');
+        return response;
+    },
     (error) => {
         const status = error.response?.status;
         const errorMessage = error.response?.data?.message || "An unexpected error occured";
