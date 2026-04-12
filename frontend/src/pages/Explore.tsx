@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import { ProjectCard } from "../components/dashboard/ProjectCard";
+import { Loader } from "../components/common/Loader";
 
 export default function Explore() {
     const [projects, setProjects ] = useState<any[]>([]);
     const [search, setSearch] = useState("");
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         fetchAllProjects();
@@ -16,6 +18,8 @@ export default function Explore() {
             setProjects(res.data);
         } catch (err) {
             console.error("Failed to fetch explore feed", err);
+        } finally {
+            setLoading(false)
         }
     };
 
@@ -39,7 +43,8 @@ export default function Explore() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProjects.length > 0 ? (
+                    {!loading ?(
+                        filteredProjects.length > 0 ? (
                         filteredProjects.map((project) => (
                             <ProjectCard
                                 key={project.id}
@@ -47,9 +52,15 @@ export default function Explore() {
                                 onDelete={fetchAllProjects}
                             />
                         ))
+                        ) : (
+                            <p className="text-zinc-500 italic">No projects found matching search</p>
+                        )
                     ) : (
-                        <p className="text-zinc-500 italic">No projects found matching search</p>
+                        <div className="col-span-full flex justify-center py-12 w-full">
+                            <Loader message="Loading projects"/>
+                        </div>
                     )}
+                    
                 </div>
             </div>
         </div>

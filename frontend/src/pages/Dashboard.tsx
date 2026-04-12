@@ -4,12 +4,14 @@ import { ProjectCard } from "../components/dashboard/ProjectCard";
 import { ProjectForm } from "../components/dashboard/ProjectForm";
 import { ProfileSection } from "../components/dashboard/ProfileSection";
 import { IncomingRequests } from "../components/dashboard/IncomingRequests";
+import { Loader } from "../components/common/Loader";
 
 
 export default function Dashboard() {
     const [profile, setProfile] = useState<any>(null);
     const [projects, setProjects] = useState<any[]>([]);
     const [isAddingProject, setIsAddingProject] = useState(false);
+    const [loading, SetLoading] = useState(true);
 
     useEffect(() => {
         fetchProfile();
@@ -32,10 +34,12 @@ export default function Dashboard() {
 
         }catch (err) { 
             console.error("Failed to fetch projects", err); 
+        }finally{
+            SetLoading(false)
         }
     }                   
 
-
+    
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8"> 
@@ -73,7 +77,8 @@ export default function Dashboard() {
 
                 {/* --- 4. PROJECTS GRID --- */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {projects.length > 0 ?(
+                    {!loading ?(
+                        projects.length > 0 ?(
                         projects.map((project) => (
                             <ProjectCard
                                 key={project.id}
@@ -82,11 +87,17 @@ export default function Dashboard() {
                                 showDelete={true}
                             />
                         ))
+                        ) : (
+                            <p className="text-zinc-500 text-sm italic col-span-2 text-center py-8 bg-zinc-900/50 rounded-xl border border-zinc-800 border-dashed">
+                                    You haven't published any projects yet. Time to build something!
+                                </p>
+                        )
                     ) : (
-                        <p className="text-zinc-500 text-sm italic col-span-2 text-center py-8 bg-zinc-900/50 rounded-xl border border-zinc-800 border-dashed">
-                                You haven't published any projects yet. Time to build something!
-                            </p>
+                        <div className="col-span-full flex justify-center py-12 w-full">
+                            <Loader message="Loading your projects"/>
+                        </div>
                     )}
+                    
                     </div>
                 </div>
 

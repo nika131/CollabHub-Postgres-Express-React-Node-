@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { JoinRequestButton } from "../components/JoinRequestButton";
+import { Loader } from "../components/common/Loader"
 
 export default function ProjectDetailes() {
     const { id } = useParams();
@@ -25,7 +26,7 @@ export default function ProjectDetailes() {
         fetchDetails();
     }, [id]);
 
-    if (loading) return <div className="text-white p-10">Loading projects. </div>
+    if (loading) return <Loader message="Decrypting project files..."/>
     if (!project) return <div className="text-white p-10">Project not found.</div>
 
     const isOwner = currentUser.id === project.ownerId;
