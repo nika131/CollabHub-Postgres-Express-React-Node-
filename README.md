@@ -102,9 +102,5 @@ Foreign keys (`ownerId`, `userId`, `projectId`) are explicitly configured with `
 
 ### Prerequisites
 * Node.js (v18+)
-* PostgreSQL (Local installation or cloud provider like Neon/Supabase)
+* PostgreSQL (Local installation or cloud provider Supabase)
 
-### 1. Backend Setup
-```bash
-cd backend
-npm install
