@@ -11,12 +11,29 @@ export default function Dashboard() {
     const [profile, setProfile] = useState<any>(null);
     const [projects, setProjects] = useState<any[]>([]);
     const [isAddingProject, setIsAddingProject] = useState(false);
-    const [loading, SetLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchProfile();
-        fetchProjects();
+        loadingFullDashboard()
     }, []);
+
+    const loadingFullDashboard = async() => {
+        setLoading(true);
+        
+        try{
+            const [profilesRes, projectsRes] = await Promise.all([
+                api.get('/profiles/me'),
+                api.get('/projects/my/all')
+            ])
+
+            setProfile(profilesRes.data);
+            setProjects(projectsRes.data);
+        } catch (err) {
+            console.log("Failed to load dashboard data", err)
+        }finally{
+            setLoading(false);
+        }
+    }
 
     const fetchProfile = async () => {
         try {
@@ -34,8 +51,6 @@ export default function Dashboard() {
 
         }catch (err) { 
             console.error("Failed to fetch projects", err); 
-        }finally{
-            SetLoading(false)
         }
     }                   
 

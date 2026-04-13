@@ -16,6 +16,7 @@ export const projects = pgTable("projects", {
     description: text("description"),
     repoUrl: text("repo_url"),
     techStack: text("tech_stack").array(),
+    vaultLink: text("vault_link"),
     status: text("status").default("active"),
     ownerId: integer("owner_id").references(() => users.id, { onDelete: 'cascade'}).notNull(),
     createdAt: timestamp("created_at").defaultNow(),

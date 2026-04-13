@@ -9,28 +9,38 @@ import { FormTextArea } from "../common/FormTextArea";
 interface ProjectFormProps {
     onSuccess: () => void;
     onCancel: () => void;
+    initialData?: any;
+    projectId?: number | string;  
 }
 
-export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
+export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: ProjectFormProps) => {
     const [loading, setLoading] = useState(false)
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-    const [newProject, setNewProject] = useState({
-        title: '',
-        description: '',
-        repoUrl: '',
-        techStack: [] as string[]
+    const isEditing = !!projectId
+    
+    const [projectData, setProjectData] = useState({
+        title: initialData?.title || '',
+        description: initialData?.description || '',
+        repoUrl: initialData?.repoUrl || '',
+        vaultLink: initialData?.vaultLink || '',
+        techStack: initialData?.techStack || [] as string[]
     });
 
 
-    const handleAddProject = async () => {
+    const handleSubmit = async () => {
         setFieldErrors({});
         setLoading(true);
 
         try {
-            await api.post('/projects', newProject);
- 
-            toast.success("Project launched!")
-            setNewProject({ title: '', description: '', repoUrl: '', techStack: []});
+            if (isEditing){
+                await api.patch(`/projects/${projectId}`, projectData)
+                toast.success("Project updated successfully!");
+            }else{
+                await api.post('/projects', projectData);
+                toast.success("Project launched!")
+            }
+            
+            setProjectData({ title: '', description: '', repoUrl: '', vaultLink: '', techStack: []});
             onSuccess();
         }catch(err: any){ 
             const responseData = err.response?.data;
@@ -65,29 +75,36 @@ export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
 
             <FormInput
                 placeholder="Project Title"
-                value={newProject.title}
-                onChange={(e) => setNewProject({...newProject, title: e.target.value})}
+                value={projectData.title}
+                onChange={(e) => setProjectData({...projectData, title: e.target.value})}
                 error={fieldErrors.title}
                 disabled={loading}
             />            
             <FormTextArea
                 placeholder="Description"
-                value={newProject.description}
-                onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+                value={projectData.description}
+                onChange={(e) => setProjectData({...projectData, description: e.target.value})}
                 error={fieldErrors.description}
                 disabled={loading}
                 rows={4}
             />
             <FormInput
                 placeholder="Github Repo URL"
-                value={newProject.repoUrl}
-                onChange={(e) => setNewProject({...newProject, repoUrl: e.target.value})}
+                value={projectData.repoUrl}
+                onChange={(e) => setProjectData({...projectData, repoUrl: e.target.value})}
                 error={fieldErrors.repoUrl}
                 disabled={loading}
             />
+            <FormInput
+                placeholder="Discord Chat Link"
+                value={projectData.vaultLink}
+                onChange={(e) => setProjectData({...projectData, vaultLink: e.target.value})}
+                error={fieldErrors.vaultLink}
+                disabled={loading}
+            />
             <TagInput
-                tags={newProject.techStack}
-                setTags={(tags) => setNewProject({ ...newProject, techStack: tags})}
+                tags={projectData.techStack}
+                setTags={(tags) => setProjectData({ ...projectData, techStack: tags})}
                 options={TECH_SKILLS}
                 placeholder="Tech Stack (Type and press enter)"
                 error={fieldErrors.techStack}
@@ -100,12 +117,13 @@ export const ProjectForm = ({ onSuccess, onCancel }: ProjectFormProps) => {
                 >Cancel
                 </button>
                 <button
-                    onClick={handleAddProject}
+                    onClick={handleSubmit}
                     disabled={loading}
                     className={`flex-1 py-2 rounded-lg font-bold transition ${
                         loading ? 'bg-green-800 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500'
                     }`}
-                >{loading ? "Publishing..." : "Publish Project"}
+
+                    >{loading ? "saving..." : isEditing ? "Save Changes" : "Publish Project"}
                 </button>
             </div>
         </div>

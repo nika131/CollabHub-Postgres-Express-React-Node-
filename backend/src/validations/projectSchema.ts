@@ -17,6 +17,10 @@ export const createProjectSchema = z.object({
         .min(1, "You must provide at least one tech stack item")
         .max(10, "You can provide up to 10 tech stack items"),
 
+    vaultLink: z.string()
+        .url("Must be a valid URL (e.g., https://discord.com/...)")
+        .optional(),
+
     status: z.enum(["active", "compleeted", "looking-for-collab"])
         .default("active"),
 });

@@ -8,7 +8,7 @@ import { AppError } from "../utils/AppError.js";
 import { catchAsync } from "../utils/catchAsync.js";
 
 export const createProject = catchAsync(async (req: AuthRequest, res: Response) => {
-    const { title, description, repoUrl, techStack, status } = req.body;
+    const { title, description, repoUrl, vaultLink, techStack, status } = req.body;
 
     if (!title) {
         throw new AppError("Title is required", 400);
@@ -18,6 +18,7 @@ export const createProject = catchAsync(async (req: AuthRequest, res: Response) 
         title,
         description,
         repoUrl,
+        vaultLink,
         techStack,
         status,
         ownerId: Number(req.userId),
@@ -91,7 +92,9 @@ export const getProjectAndUserInfobyId = catchAsync(async (req: AuthRequest, res
     const { id } = req.params;
     const currentUserId = Number(req.userId);
 
-    const [projectAndUserInfo] = await db.select(baseProjectSelection)
+    const [projectAndUserInfo] = await db.select({
+        ...baseProjectSelection,
+        vaultLink: projects.vaultLink})
         .from(projects)
         .leftJoin(users, eq(projects.ownerId, users.id))
         .where(eq(projects.id, Number(id)))
@@ -106,10 +109,18 @@ export const getProjectAndUserInfobyId = catchAsync(async (req: AuthRequest, res
         .where(and(
             eq(applications.projectId, Number(id)),
             eq(applications.userId, currentUserId)
-        ));
+    ));
+
+    let secureVaultLink = undefined;
+    const isOwner = currentUserId === projectAndUserInfo.ownerId;
+    const isAcceptedMember = userApplication?.status === 'accepted';
+    if( isOwner ||  isAcceptedMember) {
+        secureVaultLink = projectAndUserInfo.vaultLink;
+    } 
 
     res.json({
         ...projectAndUserInfo,
+        vaultLink: secureVaultLink,
         userStatus: userApplication ? userApplication.status : 'none'
     });
 });
