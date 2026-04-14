@@ -4,6 +4,7 @@ import api from "../api/axios";
 import { JoinRequestButton } from "../components/JoinRequestButton";
 import { Loader } from "../components/common/Loader"
 import { ProjectForm } from "../components/dashboard/ProjectForm";
+import { Key } from "lucide-react";
 
 export default function ProjectDetailes() {
     const { id } = useParams();
@@ -80,34 +81,61 @@ export default function ProjectDetailes() {
                     </div>
 
                     <div className="flex flex-col gap-4">
-                        <h3 className="text-xl font-semibold text-zinc-100">Project Links</h3>
 
-                        {/* 1. PUBLIC REPO (Conditional because it is optional) */}
-                        {project.repoUrl && (
-                            <a href={project.repoUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
-                            View in GitHub
-                            </a>
-                        )}
+                        <div className="flex flex-col gsp-4">
+                            <h3 className="text-xl font-semibold text-zinc-100">Open Roles</h3>
 
-                        {/* 2. THE SECURE VAULT (Backend Protected) */}
-                        {project.vaultLink && (
-                            <a href={project.vaultLink} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
-                                Join the Discord chat
-                            </a>
-                        )}
-                        
-                        {/* 3. PLATFORM ACTIONS */}
-                        <div className="mt-8 pt-8 border-t border-zinc-800">
-                            {isOwner ? (
-                                <div className="w-full bg-zinc-800/50 text-zinc-400 py-3 rounded-xl text-center border border-zinc-800">
-                                    You are owner of this project
-                                </div>
-                            ) : (
-                                <JoinRequestButton
-                                    projectId={project.id}
-                                    initialStatus={project.userStatus || 'none'}
-                                />    
+                            <div className="flex flex -wrap gap-2 mb-4">
+                                {project.roles?.map((role: any) => {
+                                    const available = role.seatsTotal - role.seatsFilled;
+                                    const isOpen = role.status === 'open' && available > 0;
+
+                                    return isOpen ? (
+                                        <span key={role.id} className="flex items-center gap-2 bg-blue-600/10 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-lg text-sm font-medium">
+                                            {role.title}
+                                            <span className="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-xs">
+                                                {available} open
+                                            </span>
+                                        </span>
+                                    ) : (
+                                        <span key={role.id} className="flex items-center gap-2 bg-blue-600/10 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-lg text-sm font-medium">
+                                            <del>{role.title}</del>
+                                            <span className="text-xs">Filled</span>
+                                        </span>
+                                    );
+                                })}
+                            </div>
+
+                            <h3 className="text-xl font-semibold text-zinc-100">Project Links</h3>
+
+                            {/* 1. PUBLIC REPO (Conditional because it is optional) */}
+                            {project.repoUrl && (
+                                <a href={project.repoUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
+                                View in GitHub
+                                </a>
                             )}
+
+                            {/* 2. THE SECURE VAULT (Backend Protected) */}
+                            {project.vaultLink && (
+                                <a href={project.vaultLink} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
+                                    Join the Discord chat
+                                </a>
+                            )}
+                            
+                            {/* 3. PLATFORM ACTIONS */}
+                            <div className="mt-8 pt-8 border-t border-zinc-800">
+                                {isOwner ? (
+                                    <div className="w-full bg-zinc-800/50 text-zinc-400 py-3 rounded-xl text-center border border-zinc-800">
+                                        You are owner of this project
+                                    </div>
+                                ) : (
+                                    <JoinRequestButton
+                                        projectId={project.id}
+                                        initialStatus={project.userStatus || 'none'}
+                                        availableRoles={project.roles?.filter((r: any) => r.status === 'open')}
+                                    />    
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

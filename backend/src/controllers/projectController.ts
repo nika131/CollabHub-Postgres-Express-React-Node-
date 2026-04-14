@@ -1,6 +1,6 @@
 import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
-import { projects, users, applications, notifications } from "../db/schema.js";
+import { projects, users, applications, notifications, project_roles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
@@ -8,26 +8,30 @@ import { AppError } from "../utils/AppError.js";
 import { catchAsync } from "../utils/catchAsync.js";
 
 export const createProject = catchAsync(async (req: AuthRequest, res: Response) => {
-    const { title, description, repoUrl, vaultLink, techStack, status } = req.body;
+    const currentUserId = Number(req.userId);
+    const { roles, ...projectData } = req.body;
 
-    if (!title) {
-        throw new AppError("Title is required", 400);
-    }
+    await db.transaction(async (tx) => {
+        const [newProject] = await tx.insert(projects)
+            .values({
+                ...projectData,
+                ownerId: currentUserId
+            })
+            .returning({ id: projects.id})
 
-    const [newProject] = await db.insert(projects).values({
-        title,
-        description,
-        repoUrl,
-        vaultLink,
-        techStack,
-        status,
-        ownerId: Number(req.userId),
-    }).returning();
+        const roleInserts = roles.map((roleTitle: string) => ({
+            projctId: newProject?.id,
+            title: roleTitle,
+            status: 'open' as const
+        }));
 
-    res.status(201).json({
-        message: "project created successfully",
-        project: newProject,
-    });
+        await tx.insert(project_roles).values(roleInserts);
+        
+        res.status(201).json({
+            message: "Projecr and Roles successfully launched!",
+            projectId: newProject?.id
+        })
+    })
 });
 
 export const DeleteProject = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -118,15 +122,20 @@ export const getProjectAndUserInfobyId = catchAsync(async (req: AuthRequest, res
         secureVaultLink = projectAndUserInfo.vaultLink;
     } 
 
+    const projectRolesData = await db.select()
+        .from(project_roles)
+        .where(eq(project_roles.projectId, Number(id)));
+
     res.json({
         ...projectAndUserInfo,
         vaultLink: secureVaultLink,
+        roles: projectRolesData,
         userStatus: userApplication ? userApplication.status : 'none'
     });
 });
 
 export const joinRequest = catchAsync(async (req: AuthRequest, res: Response) => {
-    const projectId = Number(req.params.id);
+    const { projectId, roleId } = req.body;
     const userId = Number(req.userId);
 
     const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
@@ -136,24 +145,35 @@ export const joinRequest = catchAsync(async (req: AuthRequest, res: Response) =>
         throw new AppError("You cannot join your own project, boss", 400);
     }
 
+    const [targetRole] = await db.select()
+        .from(project_roles)
+        .where(eq(project_roles.id, Number(roleId)))
+
+    if(!targetRole) throw new AppError("Role dose not exists", 404);
+    if(targetRole.status !== 'open') throw new AppError("This role has already been filled", 400)
+
     const [existingApp] = await db.select()
         .from(applications)
-        .where(and(eq(applications.projectId, projectId), eq(applications.userId, userId)));
+        .where(and(
+            eq(applications.projectId, Number(projectId)), 
+            eq(applications.userId, userId),
+            eq(applications.roleId, Number(roleId))));
 
     if (existingApp) {
         throw new AppError("Application already pending or processed", 400);
     }
 
     await db.insert(applications).values({
-        projectId,
-        userId,
-        status: 'pending'
+        projectId: Number(projectId),
+        userId: userId,
+        roleId: Number(roleId),
+        status: 'pending',
     });
 
     await db.insert(notifications).values({
         userId: project.ownerId,
         type: 'new_request',
-        message: `Someone requested to join your project: ${project.title}`
+        message: `Someone applied for the ${targetRole.title} to join your project: ${project.title}`
     });
 
     res.status(201).json({ message: "Application sent successfully" });

@@ -5,9 +5,10 @@ import toast from "react-hot-toast";
 interface JoinButtonProps {
     projectId: string;
     initialStatus?: 'pending' | 'accepted' | 'rejected' | 'none';
+    availableRoles?: string[];
 }
 
-export const JoinRequestButton = ({ projectId, initialStatus = 'none'}: JoinButtonProps) => {
+export const JoinRequestButton = ({ projectId, initialStatus = 'none', availableRoles}: JoinButtonProps) => {
     const [status, setStatus] = useState(initialStatus);
     const [loading, setLoading] = useState(false);
 

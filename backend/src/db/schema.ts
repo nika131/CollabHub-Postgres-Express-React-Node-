@@ -35,13 +35,22 @@ export const profiles = pgTable("profiles", {
     updatedAt: timestamp("updated_at").defaultNow(),
 })
 
+export const roleStatusEnum = pgEnum('project_role_status', ['open', 'filled'])
+export const project_roles = pgTable('project_roles', {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade'}).notNull(),
+    title: text('title').notNull(),
+    seatsTotal: integer('seats_total').default(1).notNull(),
+    seatsFilled: integer('seats_filled').default(0).notNull(),
+    status: roleStatusEnum('status').default('open').notNull()
+})
 
 export const statusEnum = pgEnum('application_status', ['pending', 'accepted', 'rejected']);
-
 export const applications = pgTable('application', {
     id: serial('id').primaryKey(),
     projectId: integer('project_id').references(() => projects.id, {onDelete: 'cascade'}).notNull(),
     userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    roleId: integer('role_id').references(() => project_roles.id,  {onDelete: 'cascade'}).notNull(),
     status: statusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 

@@ -23,7 +23,8 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
         description: initialData?.description || '',
         repoUrl: initialData?.repoUrl || '',
         vaultLink: initialData?.vaultLink || '',
-        techStack: initialData?.techStack || [] as string[]
+        techStack: initialData?.techStack || [] as string[],
+        roles: initialData?.roles?.map((r: any) => r.title) || ['']
     });
 
 
@@ -40,7 +41,7 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
                 toast.success("Project launched!")
             }
             
-            setProjectData({ title: '', description: '', repoUrl: '', vaultLink: '', techStack: []});
+            setProjectData({ title: '', description: '', repoUrl: '', vaultLink: '', techStack: [], roles: []});
             onSuccess();
         }catch(err: any){ 
             const responseData = err.response?.data;
