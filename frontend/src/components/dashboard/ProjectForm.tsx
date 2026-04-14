@@ -5,6 +5,7 @@ import { FormInput } from "../common/FormInput";
 import { TagInput } from "../common/TagInput";
 import { TECH_SKILLS } from "../../constants/techSkills";
 import { FormTextArea } from "../common/FormTextArea";
+import { RoleInputRow } from "./RoleInputRow";
 
 interface ProjectFormProps {
     onSuccess: () => void;
@@ -18,14 +19,40 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const isEditing = !!projectId
     
-    const [projectData, setProjectData] = useState({
+    const [projectData, setProjectData] = useState<{
+        title: string;
+        description: string;
+        repoUrl: string;
+        vaultLink: string;
+        techStack: string[];
+        roles: { title: string; seatsTotal: number }[];
+    }>({
         title: initialData?.title || '',
         description: initialData?.description || '',
         repoUrl: initialData?.repoUrl || '',
         vaultLink: initialData?.vaultLink || '',
         techStack: initialData?.techStack || [] as string[],
-        roles: initialData?.roles?.map((r: any) => r.title) || ['']
+        roles: initialData?.roles?.map((r: any) => ({ 
+            title: r.title, 
+            seatsTotal: r.seatsTotal 
+        })) || [{ title: '', seatsTotal: 1 }]
     });
+
+    const handleRoleChange = (index: number, field: 'title' | 'seatsTotal', value: string | number) => {
+        const newRoles = [...projectData.roles];
+        newRoles[index] = { ...newRoles[index], [field]: value };
+        setProjectData({ ...projectData, roles: newRoles });
+    };
+
+    const handleAddRole = () => {
+        setProjectData({ ...projectData, roles: [...projectData.roles, { title: '', seatsTotal: 1 }] });
+    };
+
+    const handleRemoveRole = (index: number) => {
+        if (projectData.roles.length === 1) return; 
+        const newRoles = projectData.roles.filter((_, i) => i !== index);
+        setProjectData({ ...projectData, roles: newRoles });
+    };
 
 
     const handleSubmit = async () => {
@@ -110,6 +137,34 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
                 placeholder="Tech Stack (Type and press enter)"
                 error={fieldErrors.techStack}
             />
+            <div className="space-y-3 pt-4 border-t border-zinc-700">
+                <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-sm font-bold text-zinc-300">Open Roles (Seats to Fill)</h4>
+                    <button
+                        type="button"
+                        onClick={handleAddRole}
+                        className="text-xs bg-zinc-700 hover:bg-zinc-600 px-2 py-1 rounded text-white font-bold transition"
+                        disabled={loading}
+                    >
+                        + Add Role
+                    </button>
+                </div>
+
+                {projectData.roles.map((role, index) => (
+                    <RoleInputRow
+                        key={index}
+                        index={index}
+                        title={role.title}
+                        seatsTotal={role.seatsTotal}
+                        canRemove={projectData.roles.length > 1}
+                        disabled={loading}
+                        onChange={handleRoleChange}
+                        onRemove={handleRemoveRole}
+                    />
+                ))}
+
+                {fieldErrors.roles && <p className="text-red-500 text-xs font-bold">{fieldErrors.roles}</p>}
+            </div>
             <div className="flex gap-3 pt-2">
                 <button
                     onClick={onCancel}

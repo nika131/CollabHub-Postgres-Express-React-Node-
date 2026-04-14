@@ -21,9 +21,13 @@ export const createProjectSchema = z.object({
         .url("Must be a valid URL (e.g., https://discord.com/...)")
         .optional(),
 
-    roles: z.array(z.string().min(2, "Role name must be at least 2 characters"))
-        .min(1, "You must create at least one open role for the project"),
-
+    roles: z.array(
+        z.object({
+            title: z.string().min(2, "Role name must be at least 2 characters"),
+            seatsTotal: z.number().int().min(1, "You must have at least 1 seat"),
+        })
+    ).min(1, "You must create at least one open role"),
+    
     status: z.enum(["active", "compleeted", "looking-for-collab"])
         .default("active"),
 });

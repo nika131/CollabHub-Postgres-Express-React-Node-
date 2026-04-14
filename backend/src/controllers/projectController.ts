@@ -19,9 +19,11 @@ export const createProject = catchAsync(async (req: AuthRequest, res: Response) 
             })
             .returning({ id: projects.id})
 
-        const roleInserts = roles.map((roleTitle: string) => ({
+        const roleInserts = roles.map((role: { title: string; seatsTotal: number }) => ({
             projctId: newProject?.id,
-            title: roleTitle,
+            title: role.title,
+            seatsTotal: role.seatsTotal,
+            seatsFilled: 0,
             status: 'open' as const
         }));
 
