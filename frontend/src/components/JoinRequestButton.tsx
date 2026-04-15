@@ -23,10 +23,13 @@ export const JoinRequestButton = ({ projectId, initialStatus = 'none', available
     const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
 
     const handleJoinRequest = async () => {
+        if (!selectedRoleId) return toast.error("Please select role");
         setLoading(true);
 
         try{
-            await api.post(`/projects/${projectId}/join`);
+            await api.post(`/projects/${projectId}/join`, {
+                roleId: selectedRoleId
+            });
             setStatus('pending');
             toast.success("Request sent to project owner!");
         } catch (err: any) {
@@ -79,7 +82,7 @@ export const JoinRequestButton = ({ projectId, initialStatus = 'none', available
             </button>
 
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex itmes-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
                     <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95">
                         <h3 className="text-xl font-bold text-white mb-2">Select Your Role </h3>
                         <p className="text-zinc-400 text-sm mb-6">Choose the specific seat your are applying for</p>
@@ -125,10 +128,10 @@ export const JoinRequestButton = ({ projectId, initialStatus = 'none', available
                             <button 
                                 onClick={handleJoinRequest}
                                 disabled={loading || !selectedRoleId}
-                                className={`felx-1 py-2 rounded-lg font-bold transition ${
+                                className={`flex-1 py-2 rounded-lg font-bold transition ${
                                     loading || !selectedRoleId
-                                    ? 'bg-blue-800 cursor-not-allowed opacitu-50'
-                                    : 'bg-blue-600 hover:bg-blue-500 text-white shdaow-lg shadow-blue-900/20'
+                                    ? 'bg-blue-800 cursor-not-allowed opacity-50'
+                                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20'
                                 }`}
                             >
                                 {loading ? 'sending...' : 'Submit Application'}

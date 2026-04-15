@@ -2,10 +2,11 @@ import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, notifications, project_roles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
 import { catchAsync } from "../utils/catchAsync.js";
+import { title } from "node:process";
 
 export const createProject = catchAsync(async (req: AuthRequest, res: Response) => {
     const currentUserId = Number(req.userId);
@@ -19,8 +20,12 @@ export const createProject = catchAsync(async (req: AuthRequest, res: Response) 
             })
             .returning({ id: projects.id})
 
+        if (!newProject) {
+            throw new AppError("Failed to initialize project headder", 500)
+        }
+
         const roleInserts = roles.map((role: { title: string; seatsTotal: number }) => ({
-            projctId: newProject?.id,
+            projectId: newProject?.id,
             title: role.title,
             seatsTotal: role.seatsTotal,
             seatsFilled: 0,
@@ -137,10 +142,11 @@ export const getProjectAndUserInfobyId = catchAsync(async (req: AuthRequest, res
 });
 
 export const joinRequest = catchAsync(async (req: AuthRequest, res: Response) => {
-    const { projectId, roleId } = req.body;
+    const projectId = req.params.id; 
+    const { roleId } = req.body;
     const userId = Number(req.userId);
 
-    const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
+    const [project] = await db.select().from(projects).where(eq(projects.id, Number(projectId)));
     if (!project) throw new AppError("Project not found", 404);
     
     if (project.ownerId === userId) {
@@ -192,10 +198,13 @@ export const getIncomingJoinRequests = catchAsync(async (req: AuthRequest, res: 
         applicantName: users.fullName,
         status: applications.status,
         createdAt: applications.createdAt, 
+        roleId: applications.roleId,
+        roleTitle: project_roles.title,
     })
     .from(applications)
     .innerJoin(projects, eq(applications.projectId, projects.id))
     .innerJoin(users, eq(applications.userId, users.id))
+    .innerJoin(project_roles, eq(applications.roleId, project_roles.id))
     .where(and(
         eq(projects.ownerId, userId),
         eq(applications.status, 'pending')
@@ -213,29 +222,57 @@ export const respondToJoinRequest = catchAsync(async (req: AuthRequest, res: Res
         throw new AppError("Invalid status", 400);
     }
 
-    const [applicationData] = await db.select({
-        ownerId: projects.ownerId,
-        userId: applications.userId
-    })
-    .from(applications)
-    .innerJoin(projects, eq(applications.projectId, projects.id))
-    .where(eq(applications.id, Number(applicationId)));
-
-    if (!applicationData || applicationData.ownerId !== userId) {
-        throw new AppError("Forbidden: You do not own this project.", 403);
-    }
-
-    await db.update(applications)
-        .set({ status })
+    const result = await db.transaction(async (tx) => {
+        const [appData] = await tx.select({
+            id: applications.id,
+            roleId: applications.roleId,
+            status: applications.status,
+            ownerId: projects.ownerId,
+            applicantId: applications.userId,
+            projectTitle: projects.title,
+        })
+        .from(applications)
+        .innerJoin(projects, eq(applications.projectId, projects.id))
         .where(eq(applications.id, Number(applicationId)));
 
-    await db.insert(notifications).values({
-        userId: applicationData.userId,
-        type: status,
-        message: status === 'accepted'
-            ? `You have been accepted to join the project!`
-            : `Your request to join the project was declined.`
-    });
+        if (!appData || appData.ownerId !== userId) {
+            throw new AppError("Forbidden: You do not own this project.", 403);
+        }
 
+        if (appData.status !== 'pending') {
+            throw new AppError("Request already processed", 400);
+        }
+
+        await tx.update(applications)
+            .set({ status })
+            .where(eq(applications.id, Number(applicationId)));
+
+        if (status === 'accepted') {
+            const [role] = await tx.select().from(project_roles).where(eq(project_roles.id, appData.roleId));
+
+            if (!role || role.seatsFilled >= role.seatsTotal) {
+                throw new AppError("this role is already full", 400);
+            }
+
+            const newFillCount = role?.seatsFilled + 1;
+
+            await tx.update(project_roles)
+                .set({
+                    seatsFilled: newFillCount,
+                    status: newFillCount >= role?.seatsTotal ? 'filled' : 'open'
+                })
+                .where(eq(project_roles.id, appData.roleId));
+        }
+
+        return appData
+    })
+    
+
+    await db.insert(notifications).values({
+        userId: result.applicantId,
+        type: status,
+        message: `Your request to join ${result.projectTitle} was ${status}.`
+    });
+    
     res.json({ message: `Application ${status} successfully` });
 });
