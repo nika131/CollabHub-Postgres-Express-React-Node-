@@ -8,7 +8,7 @@ export const IncomingRequests = () => {
 
     const fetchRequests = async () => {
         try {
-            const res = await api.get('/projects/requests/incoming');
+            const res = await api.get('/applications/requests/incoming');
             setRequests(res.data);
         } catch (err) {
             console.error("Failed to fetch requests", err);
@@ -23,7 +23,7 @@ export const IncomingRequests = () => {
 
     const handleRespond = async (applicationId: number, status: 'accepted' | 'rejected') => {
         try {
-            await api.patch(`/projects/requests/${applicationId}`, { status });
+            await api.patch(`/applications/requests/${applicationId}`, { status });
             toast.success(`Request ${status}!`);
             setRequests(requests.filter(req => Number(req.applicationId) !== Number(applicationId)));
         } catch (err) {

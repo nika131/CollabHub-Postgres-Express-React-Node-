@@ -4,7 +4,6 @@ import { db } from "../db/dbConnection.js";
 import { projects } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { AppError } from "../utils/AppError.js";
-import { catchAsync } from "../utils/catchAsync.js";
 
 export interface AuthRequest extends Request {
     userId?: string;

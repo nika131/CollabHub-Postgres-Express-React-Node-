@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../utils/AppError.js";
 
 export const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
     let statusCode = err.statusCode || 500;

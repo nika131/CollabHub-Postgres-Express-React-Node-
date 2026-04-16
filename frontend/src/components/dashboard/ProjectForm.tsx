@@ -6,6 +6,7 @@ import { TagInput } from "../common/TagInput";
 import { TECH_SKILLS } from "../../constants/techSkills";
 import { FormTextArea } from "../common/FormTextArea";
 import { RoleInputRow } from "./RoleInputRow";
+import { ROLE_OPTIONS } from "../../constants/techSkills";
 
 interface ProjectFormProps {
     onSuccess: () => void;
@@ -154,7 +155,8 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
                     <RoleInputRow
                         key={index}
                         index={index}
-                        title={role.title}
+                        roleTag={role.title}
+                        options={ROLE_OPTIONS}
                         seatsTotal={role.seatsTotal}
                         canRemove={projectData.roles.length > 1}
                         disabled={loading}

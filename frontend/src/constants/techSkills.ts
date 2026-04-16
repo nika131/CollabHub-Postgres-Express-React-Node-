@@ -3,3 +3,8 @@ export const TECH_SKILLS = [
     "Java", "C#", "C++", "Angular", "Vue", "Tailwind CSS", 
     "MongoDB", "PostgreSQL", "Docker", "AWS", "Firebase", "Next.js"
 ].sort();
+
+
+export const ROLE_OPTIONS = [
+    "Frontend Developer", "Backend Developer", "UI/UX Designer", "DevOps Engineer"
+];

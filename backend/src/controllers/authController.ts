@@ -5,98 +5,84 @@ import type { AuthRequest } from "../middleware/authMiddleware.js";
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { email } from 'zod';
-
+import { AppError } from '../utils/AppError.js';
 
 
 export const registerUser = async (req: Request, res: Response) => {
     const { fullName, email, password } = req.body;
 
-    try {
-        const existingUser = await db.select().from(users).where(eq(users.email, email));
+    const existingUser = await db.select().from(users).where(eq(users.email, email));
 
-        if (existingUser.length > 0) {
-            return res.status(400).json({ message: "Email already registered."});
+    if (existingUser.length > 0) {
+        throw new AppError("Email already registered.", 400);
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await db.transaction(async (tx) => {
+        const [newUser] = await tx.insert(users).values({
+            fullName,
+            email,
+            hashedPassword,
+        }).returning();
+
+        if (!newUser) {
+            throw new AppError("failed to create user", 400);
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        await db.transaction(async (tx) => {
-            const [newUser] = await tx.insert(users).values({
-                fullName,
-                email,
-                hashedPassword,
-            }).returning();
-
-            if (!newUser) {
-                throw new Error("failed to create user");
-            }
-
-            await tx.insert(profiles).values({
-                userId: newUser.id,
-                bio: "New CollabHub Member",
-                interests: [],
-                location: "Global",
-            });
+        await tx.insert(profiles).values({
+            userId: newUser.id,
+            bio: "New CollabHub Member",
+            interests: [],
+            location: "Global",
         });
+    });
 
-        res.status(201).json({ message: "User profile created successfully!"})
-    }catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error. try again later."})
-    }
+    res.status(201).json({ message: "User profile created successfully!"})
 }
 
 export const loginUser = async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    
-    try{
-        const [user] = await db.select().from(users).where(eq(users.email, email))
 
-        if (!user){
-            return res.status(400).json({ message: "Invalid email or password" });
-        }
+    const [user] = await db.select().from(users).where(eq(users.email, email))
 
-        const isMatch = await bcrypt.compare(password, user.hashedPassword)
-        if (!isMatch){
-            return res.status(400).json({ message: "Invalid email or password"})
-        }
+    if (!user){
+        throw new AppError("Invalid email or password", 401);
+    }
 
-        const token = jwt.sign(
-            { userId: user.id},
-            process.env.JWT_SECRET!,
-            { expiresIn: "1d"}
-        );
+    const isMatch = await bcrypt.compare(password, user.hashedPassword)
+    if (!isMatch){
+        throw new AppError("Invalid email or password", 401)
+    }
 
-        res.status(200).json({
-            message: "Login successful",
-            token,
-            user: { id: user.id, fullName: user.fullName, email: user.email}
-        });
+    const token = jwt.sign(
+        { userId: user.id},
+        process.env.JWT_SECRET!,
+        { expiresIn: "1d"}
+    );
 
-    }catch (error: any) {
-        res.status(500).json({ message: "Server error", errorName: error.name, errorMessage: error.message});
-    };
+    res.status(200).json({
+        message: "succes",
+        token,
+        user: { id: user.id, fullName: user.fullName, email: user.email}
+    });
 }
 
 export const getMe = async (req: AuthRequest, res: Response) => {
-    try {
-        const [user] = await db.select({
-            id: users.id,
-            fullName: users.fullName,
-            email: users.email,
-            createdAt: users.createdAt
-        })
-        .from(users)
-        .where(eq(users.id, Number(req.userId)));
 
-        if (!user) {
-            return res.status(404).json({ message: "User not found!" });
-        }
-        
-        res.json(user);
-    }catch (error) {
-        res.status(500).json({ message: "Server error. try again later."})
+    const [user] = await db.select({
+        id: users.id,
+        fullName: users.fullName,
+        email: users.email,
+        createdAt: users.createdAt
+    })
+    .from(users)
+    .where(eq(users.id, Number(req.userId)));
+
+    if (!user) {
+        throw new AppError("User not found!", 404);
     }
+    
+    res.json(user);
 }

@@ -27,7 +27,7 @@ export const JoinRequestButton = ({ projectId, initialStatus = 'none', available
         setLoading(true);
 
         try{
-            await api.post(`/projects/${projectId}/join`, {
+            await api.post(`/applications/${projectId}/join`, {
                 roleId: selectedRoleId
             });
             setStatus('pending');
