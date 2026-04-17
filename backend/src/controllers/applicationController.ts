@@ -10,7 +10,12 @@ export const joinRequest = async (req: AuthRequest, res: Response) => {
     const { roleId } = req.body;
     const userId = Number(req.userId);
 
-    const [project] = await db.select().from(projects).where(eq(projects.id, Number(projectId)));
+    const [project] = await db.select({ 
+        ownerId : projects.ownerId, 
+        title: projects.title })
+    .from(projects)
+    .where(eq(projects.id, Number(projectId)));
+
     if (!project) throw new AppError("Project not found", 404);
     
     if (project.ownerId === userId) {
@@ -131,15 +136,15 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
                 .where(eq(project_roles.id, appData.roleId));
         }
 
+        await tx.insert(notifications).values({
+            userId: result.applicantId,
+            type: status,
+            message: `Your request to join ${result.projectTitle} was ${status}.`
+        });
+
         return appData
     })
     
 
-    await db.insert(notifications).values({
-        userId: result.applicantId,
-        type: status,
-        message: `Your request to join ${result.projectTitle} was ${status}.`
-    });
-    
     res.json({ message: `Application ${status} successfully` });
 };

@@ -9,24 +9,31 @@ export default function Explore() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetchAllProjects();
-    }, []);
+        const fetchProjects = async () => {
+            setLoading(true);
+            try {
+                const safeSearchTerm = encodeURIComponent(search);
+                const res = await api.get(`/projects/all?search=${safeSearchTerm}`);
+                setProjects(res.data) 
+            } catch (err) {
+                console.error("Failed to fetch projects", err);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const fetchAllProjects = async () => {
-        try {
-            const res = await api.get('/projects/all');
-            setProjects(res.data);
-        } catch (err) {
-            console.error("Failed to fetch explore feed", err);
-        } finally {
-            setLoading(false)
-        }
-    };
+        const timeoutId = setTimeout(() => {
+            fetchProjects();
+        }, 500)
 
-    const filteredProjects = projects.filter(p => 
-        p.title.toLowerCase().includes(search.toLowerCase()) || 
-        p.techStack?.some((tech: string) => tech.toLowerCase().includes(search.toLowerCase()))
-    )
+        return () => clearTimeout(timeoutId);
+    }, [search]);
+
+    const handleProjectDeleted = (deleteProjectId: number) => {
+        setProjects((prevProjects) =>
+            prevProjects.filter((project) => project.id !== deleteProjectId)
+        );
+    }
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8">
@@ -37,6 +44,7 @@ export default function Explore() {
                     <input 
                         type="text"
                         placeholder="Search by title or tech (e.g. React)..."
+                        value={search}
                         className="w-full md:w-96 bg-zinc-900 border border-zinc-800 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 transition"
                         onChange={(e) => setSearch(e.target.value)}  
                     />
@@ -44,12 +52,12 @@ export default function Explore() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {!loading ?(
-                        filteredProjects.length > 0 ? (
-                        filteredProjects.map((project) => (
+                        projects.length > 0 ? (
+                        projects.map((project) => (
                             <ProjectCard
                                 key={project.id}
                                 project={project}
-                                onDelete={fetchAllProjects}
+                                onDelete={handleProjectDeleted}
                             />
                         ))
                         ) : (

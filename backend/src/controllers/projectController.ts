@@ -2,7 +2,7 @@ import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, project_roles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ilike, sql, or } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
 
@@ -67,10 +67,24 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
 };
 
 export const getAllProjects = async (req: AuthRequest, res: Response) => {
-    const allProjects = await db.select(baseProjectSelection)
+    const { search } = req.query;
+    
+    let query = db.select(baseProjectSelection)
         .from(projects)
         .leftJoin(users, eq(projects.ownerId, users.id));
 
+    if (search && typeof search === 'string') {
+        const searchTerm = `%${search}%`;
+
+        query.where(
+            or(
+                ilike(projects.title, searchTerm),
+                sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
+            )
+        );
+    }
+
+    const allProjects = await query;
     res.json(allProjects);
 };
 
