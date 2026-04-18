@@ -71,12 +71,13 @@ export const getAllProjects = async (req: AuthRequest, res: Response) => {
     
     let query = db.select(baseProjectSelection)
         .from(projects)
-        .leftJoin(users, eq(projects.ownerId, users.id));
+        .leftJoin(users, eq(projects.ownerId, users.id))
+        .$dynamic();
 
     if (search && typeof search === 'string') {
         const searchTerm = `%${search}%`;
 
-        query.where(
+        query = query.where(
             or(
                 ilike(projects.title, searchTerm),
                 sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
