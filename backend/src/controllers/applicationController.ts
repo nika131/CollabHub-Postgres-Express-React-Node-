@@ -4,6 +4,8 @@ import { projects, users, applications, notifications, project_roles } from "../
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and } from "drizzle-orm";
 import { AppError } from "../utils/AppError.js";
+import { io, userSocketMap } from "../index.js";
+import { log } from "node:console";
 
 export const joinRequest = async (req: AuthRequest, res: Response) => {
     const projectId = req.params.id; 
@@ -41,20 +43,35 @@ export const joinRequest = async (req: AuthRequest, res: Response) => {
     }
 
     await db.transaction(async (tx) => {
-        await db.insert(applications).values({
+        await tx.insert(applications).values({
             projectId: Number(projectId),
             userId: userId,
             roleId: Number(roleId),
             status: 'pending',
         });
 
-        await db.insert(notifications).values({
+        await tx.insert(notifications).values({
             userId: project.ownerId,
             type: 'new_request',
             message: `Someone applied for the ${targetRole.title} to join your project: ${project.title}`
         });
+
+        
+
     })
+
+    const applicantSocketId = userSocketMap.get(project.ownerId);
     
+    if (applicantSocketId) {
+        io.to(applicantSocketId).emit("new_notification", {
+            type: 'new_request',
+            message: `Someone applied for the ${targetRole.title} to join your project: ${project.title}`,
+            createdAt: new Date().toISOString()
+        })
+        console.log(`WebSocket Sent to User ${project.ownerId}`);
+    } else {
+        console.log(`User ${project.ownerId} is offline. Notification saved to DB only.`)
+    }
 
     res.status(201).json({ message: "Application sent successfully" });
 };
@@ -72,6 +89,8 @@ export const getIncomingJoinRequests = async (req: AuthRequest, res: Response) =
         createdAt: applications.createdAt, 
         roleId: applications.roleId,
         roleTitle: project_roles.title,
+        seatsTotal: project_roles.seatsTotal,
+        seatsFilled: project_roles.seatsFilled,
     })
     .from(applications)
     .innerJoin(projects, eq(applications.projectId, projects.id))
@@ -137,13 +156,27 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
         }
 
         await tx.insert(notifications).values({
-            userId: result.applicantId,
+            userId: appData.applicantId,
             type: status,
-            message: `Your request to join ${result.projectTitle} was ${status}.`
+            message: `Your request to join ${appData.projectTitle} was ${status}.`
         });
 
         return appData
     })
+
+    const applicantSocketId = userSocketMap.get(result.applicantId);
+
+        if (applicantSocketId) {
+            io.to(applicantSocketId).emit("new_notification", {
+                type: status,
+                message: `Your request to join ${result.projectTitle} was ${status}.`,
+                createdAt: new Date().toISOString()
+            })
+            console.log(`WebSocket Sent to User ${result.applicantId}`);
+        } else {
+            console.log(`User ${result.applicantId} is offline. Notification saved to DB only.`)
+        }
+
     
 
     res.json({ message: `Application ${status} successfully` });

@@ -7,6 +7,9 @@ import Explore from "./pages/Explore";
 import ProtectedRoutes from "./components/ProtectedRoute";
 import ProjectDetails from "./pages/ProjectDetails";
 import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
+import { socket } from "./api/socket";
+import toast from "react-hot-toast";
 
 function App() {
   return (
@@ -28,6 +31,8 @@ function App() {
     </Router>
   );
 }
+
+
 
 
 export default App

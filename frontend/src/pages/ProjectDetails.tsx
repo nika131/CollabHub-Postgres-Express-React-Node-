@@ -82,7 +82,7 @@ export default function ProjectDetailes() {
 
                     <div className="flex flex-col gap-4">
 
-                        <div className="flex flex-col gsp-4">
+                        <div className="flex flex-col gap-4">
                             <h3 className="text-xl font-semibold text-zinc-100">Open Roles</h3>
 
                             <div className="flex flex -wrap gap-2 mb-4">
@@ -107,20 +107,23 @@ export default function ProjectDetailes() {
                             </div>
 
                             <h3 className="text-xl font-semibold text-zinc-100">Project Links</h3>
+                            
+                            <div className="flex flex-col gap-3">
+                                {/* 1. PUBLIC REPO (Conditional because it is optional) */}
+                                {project.repoUrl && (
+                                    <a href={project.repoUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
+                                    View in GitHub
+                                    </a>
+                                )}
 
-                            {/* 1. PUBLIC REPO (Conditional because it is optional) */}
-                            {project.repoUrl && (
-                                <a href={project.repoUrl} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
-                                View in GitHub
-                                </a>
-                            )}
-
-                            {/* 2. THE SECURE VAULT (Backend Protected) */}
-                            {project.vaultLink && (
-                                <a href={project.vaultLink} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
-                                    Join the Discord chat
-                                </a>
-                            )}
+                                {/* 2. THE SECURE VAULT (Backend Protected) */}
+                                {project.vaultLink && (
+                                    <a href={project.vaultLink} target="_blank" className="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-xl font-bold transition">
+                                        Join the Discord chat
+                                    </a>
+                                )}
+                            </div>
+                            
                             
                             {/* 3. PLATFORM ACTIONS */}
                             <div className="mt-8 pt-8 border-t border-zinc-800">

@@ -21,11 +21,23 @@ export const IncomingRequests = () => {
         fetchRequests();
     }, []);
 
-    const handleRespond = async (applicationId: number, status: 'accepted' | 'rejected') => {
+    const handleRespond = async (applicationId: number, status: 'accepted' | 'rejected', roleId: Number) => {
         try {
             await api.patch(`/applications/requests/${applicationId}`, { status });
             toast.success(`Request ${status}!`);
-            setRequests(requests.filter(req => Number(req.applicationId) !== Number(applicationId)));
+
+            if (status === 'rejected') {
+                setRequests(prev => prev.filter(req => Number(req.applicationId) !== Number(applicationId)));
+            } else if (status = 'accepted'){
+                setRequests(prev => prev.map(req => {
+                    if (req.roleId === roleId){
+                        return { ...req, seatsFilled: req.seatsFilled + 1};
+                    }
+                    return req;
+            }))
+                
+            }
+            
         } catch (err) {
             toast.error("Failed to update request");
         }
@@ -57,14 +69,20 @@ export const IncomingRequests = () => {
 
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button
-                            onClick={() => handleRespond(req.applicationId, 'rejected')}
+                            onClick={() => handleRespond(req.applicationId, 'rejected', req.roleId)}
                             className="flex-1 sm:flex-none px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg font-bold transition text-sm"
                             >Decline
                         </button>
                         <button
-                            onClick={() => handleRespond(req.applicationId, 'accepted')}
-                            className="flex-1 sm:flex-none px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold transition text-sm"
-                            >Accept 
+                            onClick={() => handleRespond(req.applicationId, 'accepted', req.roleId)}
+                            disabled={req.seatsFilled >= req.seatsTotal || req.status === 'accepted'}
+                            className={`flex-1 sm:flex-none px-4 py-2 bg-green-600 rounded-lg font-bold transition text-sm
+                                ${req.seatsFilled >= req.seatsTotal
+                                    ? 'bg-zinc700 text-zinc-500 cursor-not-allowed'
+                                    : 'bg-green-600 hover:bg-green-500 text-white'
+                                }`}
+                        >
+                            {req.seatsFilled >= req.seatsTotal ? 'Role Full' : 'Accept'}         
                         </button>
                     </div>
                 </div>

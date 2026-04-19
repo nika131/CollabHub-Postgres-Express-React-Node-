@@ -25,6 +25,7 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
         description: string;
         repoUrl: string;
         vaultLink: string;
+        status: string;
         techStack: string[];
         roles: { title: string; seatsTotal: number }[];
     }>({
@@ -32,8 +33,10 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
         description: initialData?.description || '',
         repoUrl: initialData?.repoUrl || '',
         vaultLink: initialData?.vaultLink || '',
+        status: initialData?.status || 'active',
         techStack: initialData?.techStack || [] as string[],
         roles: initialData?.roles?.map((r: any) => ({ 
+            id: r.id,
             title: r.title, 
             seatsTotal: r.seatsTotal 
         })) || [{ title: '', seatsTotal: 1 }]
@@ -69,7 +72,7 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
                 toast.success("Project launched!")
             }
             
-            setProjectData({ title: '', description: '', repoUrl: '', vaultLink: '', techStack: [], roles: []});
+            setProjectData({ title: '', description: '', repoUrl: '', vaultLink: '', status: '', techStack: [], roles: []});
             onSuccess();
         }catch(err: any){ 
             const responseData = err.response?.data;
@@ -131,6 +134,21 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
                 error={fieldErrors.vaultLink}
                 disabled={loading}
             />
+
+            <div className="flex flex-col gap-1">
+                <label className="text-sm font-bold text-zinc-300 ml-1">Project Status</label>
+                <select 
+                    value={projectData.status}
+                    onChange={(e) => setProjectData({ ...projectData, status: e.target.value })}
+                    disabled={loading}
+                    className="bg-zinc-900 border border-zinc-700 text-white rounded-lg p-3 focus:outline-none focus:border-blue-500 transition cursor-pointer"
+                >
+                    <option value="active">Active</option>
+                    <option value="looking-for-collab">looking for collab</option>
+                    <option value="closed">Closed</option>
+                </select>
+                {fieldErrors.status && <p className="text-reed-500 text-xs font-bold">{fieldErrors.status}</p>}
+            </div>
             <TagInput
                 tags={projectData.techStack}
                 setTags={(tags) => setProjectData({ ...projectData, techStack: tags})}

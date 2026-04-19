@@ -28,7 +28,7 @@ export const createProjectSchema = z.object({
         })
     ).min(1, "You must create at least one open role"),
     
-    status: z.enum(["active", "compleeted", "looking-for-collab"])
+    status: z.enum(["active", "closed", "looking-for-collab"])
         .default("active"),
 });
 

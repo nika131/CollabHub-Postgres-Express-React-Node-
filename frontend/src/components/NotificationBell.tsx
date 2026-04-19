@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import api from "../api/axios";
 import { Bell } from 'lucide-react';
+import { socket } from "../api/socket";
+import toast from "react-hot-toast";
 
 interface Notification {
     id: number;
@@ -25,6 +27,30 @@ export const NotificationBell = () => {
             console.error("Failed to fetch notifications", err);
         }
     };
+
+    const userData = localStorage.getItem('user_info');
+    const currentUser = userData ? JSON.parse(userData) : null;
+
+    useEffect(() => {
+        if (!currentUser?.id) return;
+
+        socket.connect();
+
+        socket.emit("register", currentUser.id)
+
+        socket.on("new_notification", (data) => {
+            toast(data.message, {
+                style: {borderRadius: '10px', background: '#333', color: '#fff'}
+            });
+            setUnreadCount(prev => prev + 1)
+            setNotifications(perv => [{ ...data, id: Date.now() }, ...perv])
+        });
+
+        return () => {
+            socket.off("new_notification");
+            socket.disconnect();
+        };
+    }, [currentUser?.id]);
 
     useEffect(() => {
         fetchNotifications();

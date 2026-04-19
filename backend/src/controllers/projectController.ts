@@ -2,7 +2,7 @@ import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, project_roles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and, ilike, sql, or } from "drizzle-orm";
+import { eq, and, ilike, sql, or, not } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
 
@@ -55,15 +55,39 @@ export const DeleteProject = async (req: AuthRequest, res: Response) => {
 
 export const updateProject = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const { title, description, status } = req.body;
+    const { title, description, status, repoUrl, techStack, vaultLink, roles } = req.body;
     const userId = Number(req.userId);
 
-    const updateRows = await db.update(projects)
-        .set({ title, description, status })
-        .where(and(eq(projects.id, Number(id)), eq(projects.ownerId, userId)))
-        .returning();
+    const result = await db.transaction(async(tx) => {
+        const [updatedProject] = await tx.update(projects)
+            .set({ title, description, status, repoUrl, techStack, vaultLink })
+            .where(and(eq(projects.id, Number(id)), eq(projects.ownerId, userId)))
+            .returning();
+        
+        if (!updatedProject) {
+            throw new AppError ("Project not found or you are not the boss", 404)
+        }
 
-    res.json({ message: "Project updated", project: updateRows[0] });
+        if (roles && roles.length > 0) {
+            for (const role of roles) {
+                if (role.id){
+                    await tx.update(project_roles)
+                    .set({ title: role.title, seatsTotal: role.seatsTotal})
+                    .where(eq(project_roles.id, role.id));
+                }else {
+                    await tx.insert(project_roles).values({
+                        projectId: updatedProject.id,
+                        title: role.title,
+                        seatsTotal: role.seatsTotal
+                    });
+                }
+            }
+        }
+
+        return updatedProject;
+    })
+    
+    res.json({ message: "Project updated", project: result });
 };
 
 export const getAllProjects = async (req: AuthRequest, res: Response) => {
@@ -74,15 +98,22 @@ export const getAllProjects = async (req: AuthRequest, res: Response) => {
         .leftJoin(users, eq(projects.ownerId, users.id))
         .$dynamic();
 
+    const statusFilter = not(eq(projects.status, 'closed'));
+
     if (search && typeof search === 'string') {
         const searchTerm = `%${search}%`;
 
         query = query.where(
-            or(
-                ilike(projects.title, searchTerm),
-                sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
+            and(
+                statusFilter,
+                or(
+                    ilike(projects.title, searchTerm),
+                    sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
+                )
             )
         );
+    }else {
+        query = query.where(statusFilter);
     }
 
     const allProjects = await query;
