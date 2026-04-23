@@ -1,106 +1,112 @@
 # CollabHub 🚀
 
-CollabHub is a full-stack developer collaboration platform designed to bridge the gap between idea generation and team execution. It allows developers to publish technical projects, discover open repositories, apply to join teams, and manage inbound collaboration requests through a dedicated dashboard and global notification system.
+CollabHub is a full-stack developer collaboration platform built with a strict **TypeScript-first** approach. It bridges the gap between idea generation and team execution by enabling developers to publish technical projects, define specific engineering roles, and manage team assembly through a real-time, event-driven architecture.
 
 ## 📖 Table of Contents
-- [Core Features](#-core-features)
-- [Tech Stack](#-tech-stack)
-- [System Architecture & Engineering](#-system-architecture--engineering)
-- [Database Schema & Integrity](#-database-schema--integrity)
-- [Local Setup & Installation](#-local-setup--installation)
 
----
+  - [Core Features](https://www.google.com/search?q=%23-core-features)
+  - [Tech Stack](https://www.google.com/search?q=%23-tech-stack)
+  - [System Architecture & Engineering](https://www.google.com/search?q=%23-system-architecture--engineering)
+  - [Database Schema & Integrity](https://www.google.com/search?q=%23-database-schema--integrity)
+  - [Local Setup & Installation](https://www.google.com/search?q=%23-local-setup--installation)
+
+-----
 
 ## 🎯 Core Features
 
-### 1. Authentication & User Profiles
-* **Secure Access:** JWT-based stateless authentication with cryptographically salted passwords (bcrypt) and protected API routes.
-* **Dynamic Profiles:** Users maintain profiles containing their tech stack interests, location, and bio.
-* **Auto-Initialization:** Database transactions ensure a connected profile is automatically generated the moment a user registers.
+### 1\. Real-Time Collaboration Engine
 
-### 2. Project Management (CRUD)
-* **Creation & Formatting:** Users can launch projects defining a Title, Description, GitHub Repo URL, and a customized Tech Stack using an interactive tagging system.
-* **Ownership Control:** Projects are strictly bound to their creators. Only the owner can edit details, change the project status (Active, Completed), or delete the repository.
-* **Discovery Feed:** A global Explore page allows users to search the entire database of projects by title or specific technologies.
+  * **Role-Based Matching:** Project owners define specific technical needs (e.g., "DevOps," "Frontend") with explicit seat counts. The system tracks capacity in real-time.
+  * **Owner Command Center:** A dedicated dashboard for managing inbound talent. Accepting an applicant triggers an atomic chain: updating role capacity, firing a WebSocket notification, and potentially auto-closing the project.
+  * **The Secure Vault:** Integrated Discord/Slack "Vault" links that are cryptographically restricted at the database level and revealed only to accepted team members.
 
-### 3. The Collaboration Engine
-* **Application Workflow:** Users can view detailed project pages and submit "Join Requests" to the owner.
-* **State Tracking:** The system prevents duplicate applications and tracks the exact state of the request (Pending, Accepted, Rejected).
-* **Owner Dashboard:** A dedicated command center where project owners view incoming applications, review applicant profiles, and explicitly Accept or Decline requests.
+### 2\. Live Notification System
 
-### 4. Global Notification System
-* **Real-Time Alerts:** A stateful Bell Icon in the navigation bar tracks unread alerts.
-* **Action-Triggered:** Notifications are automatically generated in the backend when applications are submitted or updated.
-* **Smart Polling & Read States:** Opening the notification dropdown automatically communicates with the backend to mark all alerts as "Read," clearing the UI badges.
+  * **Socket.io Integration:** Powered by a persistent WebSocket layer for instant, bi-directional communication, replacing legacy polling methods.
+  * **Action-Triggered Alerts:** Applicants receive instant haptic-style notifications for status changes (Accepted/Declined) the moment they occur.
+  * **Read-State Tracking:** Intelligent UI badge management that synchronizes unread counts with the backend the moment the tray is accessed.
 
----
+### 3\. Project Management & Discovery
+
+  * **Advanced CRUD:** Robust project refactoring featuring "Role Upserts"—the ability to modify existing roles without breaking active applicant links or role history.
+  * **Automated Lifecycle:** Projects transition through `Active`, `Looking-for-Collab`, and `Closed` states, managed by both manual overrides and automated system triggers.
+  * **Discovery Feed:** A global Explore page using server-side `$dynamic` queries to filter the database by technology or title while strictly hiding completed projects.
+
+### 4\. Global UX & Performance
+
+  * **Optimistic UI:** Local state updates immediately upon action (e.g., accepting an applicant), providing a high-performance, zero-latency feel.
+  * **Global Loading States:** Centralized loading indicators and interceptors ensure a smooth, professional transition during high-latency network operations.
+
+-----
 
 ## 💻 Tech Stack
 
 **Frontend (Client)**
-* **Framework:** React 18 + Vite + TypeScript
-* **Routing:** React Router v6 (with custom `<ProtectedRoutes />`)
-* **Styling:** Tailwind CSS (Dark-mode optimized)
-* **HTTP Client:** Axios (with custom interceptors for global error handling and JWT injection)
-* **State & UI:** React Hooks, Lucide-React (Icons), React-Hot-Toast (Notifications)
+
+  * **Framework:** React 18 + Vite + TypeScript
+  * **Real-Time:** Socket.io-client
+  * **Styling:** Tailwind CSS (Dark-mode optimized)
+  * **HTTP Client:** Axios (Custom interceptors for JWT injection and global 401/403 security handling)
 
 **Backend (API)**
-* **Environment:** Node.js + Express
-* **Language:** TypeScript
-* **Database:** PostgreSQL
-* **ORM:** Drizzle ORM (Type-safe SQL queries and schema management)
-* **Validation:** Zod (Strict runtime schema validation)
 
----
+  * **Environment:** Node.js + Express
+  * **Language:** TypeScript
+  * **Real-Time:** Socket.io (with custom Socket-to-User ID Registry)
+  * **Database:** PostgreSQL (Supabase)
+  * **ORM:** Drizzle ORM (Type-safe SQL queries)
+  * **Validation:** Zod (Strict runtime schema enforcement)
+
+-----
 
 ## 🧠 System Architecture & Engineering
 
-This project was built using a strict **Layered Architecture** (Controller-Route-Middleware-Service), enforcing **Separation of Concerns**, the **DRY (Don't Repeat Yourself) principle**, and highly defensible API design.
+### 1\. The Event-Driven Network Layer
 
-### 1. The Network Layer & Global Interceptors
-The frontend does not handle API requests blindly. All HTTP traffic flows through a centralized Axios instance configured with robust interceptors:
-* **Request Interceptor (Token Injection):** Automatically retrieves the JWT from `localStorage` and injects it into the `Authorization` header of every outgoing request, creating a DRY centralized configuration.
-* **Response Interceptor (Global Security Guard):** Monitors all incoming traffic. If the backend throws a `401 Unauthorized` or `403 Forbidden`, the interceptor automatically scrubs stale tokens from local storage and forces a secure redirect to the login page, preventing the UI from crashing on expired sessions.
+The system utilizes a custom **Socket Registry** that maps internal `userIds` to active `socketIds`. This allows the server to target specific users for private data emission, ensuring real-time updates without broadcasting sensitive information to the entire network.
 
-### 2. Advanced Security & Defense in Depth
-* **Cryptographic Salting:** Passwords are not just hashed; they are cryptographically salted using `bcrypt.genSalt(10)` before hashing to defend against pre-computation (Rainbow Table) attacks.
-* **Validation as a Security Layer:** Incoming payloads are strictly validated using **Zod** middleware *before* the request ever reaches the database controller. This prevents malicious payloads from bypassing frontend restrictions via tools like Postman.
-* **"Bouncer" Middlewares:** Route-level authorization is decoupled from business logic. The `isProjectOwner` middleware intercepts `PATCH` and `DELETE` requests, querying the database to verify the acting user actually owns the target project before allowing the controller to execute.
+### 2\. Native Database Intelligence
 
-### 3. Global Error Handling Pipeline
-To prevent massive `try/catch` boilerplate in the controllers, the backend utilizes a centralized error-handling architecture:
-* **`catchAsync` Wrapper:** Automatically catches rejected promises in asynchronous controllers and passes them to Express's `next()` function.
-* **`AppError` Class:** A custom extension of the native JavaScript Error object that injects specific HTTP status codes.
-* **Global Error Middleware:** A terminal bouncer that catches all downstream errors, formats them safely (hiding stack traces in production), and returns a standardized JSON response to the frontend.
+To ensure 100% data integrity, the system utilizes a native **PL/pgSQL Trigger** (`check_and_close_project`). This ensures that the second a role hits capacity, the database itself locks the project from discovery—making the integrity logic independent of the Application Layer.
 
-### 4. Database Query Optimization & DRY Design
-* **Centralized Selectors:** To avoid rewriting identical SQL `SELECT` and `LEFT JOIN` operations across different routes, the core project data shape is extracted into a centralized `selectors.ts` file (`baseProjectSelection`).
-* **DRY Schema Validation:** Instead of writing a duplicate Zod schema for the `PATCH` route, the backend utilizes Zod's `.partial()` method (`updateProjectSchema`) to allow isolated field updates while maintaining strict length and type constraints.
+### 3\. Transactional Upsert Logic
 
----
+Project refactoring is handled via complex **Transactional Upserts**. The update engine identifies existing roles via ID and distinguishes them from new additions, ensuring that team data is preserved even during significant project scope changes.
+
+### 4\. Security & Defense in Depth
+
+  * **Cryptographic Salting:** Passwords are cryptographically salted and hashed using `bcrypt` before storage.
+  * **Validation as a Firewall:** Zod middleware strictly validates incoming payloads *before* they reach the controllers, preventing malformed data from hitting the database.
+  * **Bouncer Middlewares:** Authorization is decoupled from business logic. Centralized middlewares verify resource ownership before allowing `PATCH` or `DELETE` executions.
+
+-----
 
 ## 🗄️ Database Schema & Integrity
 
-The PostgreSQL database is heavily normalized, leveraging Drizzle ORM's relational API to ensure strict data purity and referential integrity.
+The PostgreSQL database is heavily normalized, leveraging Drizzle ORM's relational API to ensure strict data purity.
 
-### 1. ACID Transactions
-User registration executes inside a strict `db.transaction()`. When a new user registers, the system creates the `users` row and the linked `profiles` row simultaneously. If either operation fails, the entire transaction rolls back, guaranteeing no orphaned data is ever saved to the database.
+### 1\. ACID Transactions
 
-### 2. Referential Integrity & Cascading Deletes
-Foreign keys (`ownerId`, `userId`, `projectId`) are explicitly configured with `onDelete: 'cascade'`. This guarantees referential integrity; deleting a user automatically scrubs their associated projects, profiles, notifications, and applications from the database instantly.
+Critical operations, such as user registration or role updates, execute inside strict `db.transaction()` blocks. If any part of the process fails, the entire operation rolls back to prevent orphaned or corrupted data.
 
-### 3. Relational Mapping
-1. **`users`**: Core identity (ID, Email, HashedPassword).
-2. **`profiles`**: Extended metadata (Bio, Location, Interests) linked 1:1 with Users.
-3. **`projects`**: The core entities linked 1:Many to Users (Owner).
-4. **`applications`**: The join table facilitating the Many:Many relationship between Users and Projects, tracking the exact `status` enum (pending, accepted, rejected).
-5. **`notifications`**: An isolated logging table linked directly to Users to track system events and read receipts.
+### 2\. Referential Integrity
 
----
+Foreign keys are configured with `onDelete: 'cascade'`. This guarantees that deleting a project or user automatically scrubs all associated applications, roles, and notifications instantly.
+
+### 3\. Core Relational Mapping
+
+1.  **`users`**: Core identity and auth.
+2.  **`project_roles`**: Tracks specific project needs, seats, and capacity status.
+3.  **`applications`**: The join table facilitating the relationship between talent and projects.
+4.  **`notifications`**: Isolated event logging with read/unread state management.
+
+-----
 
 ## 🛠️ Local Setup & Installation
 
 ### Prerequisites
-* Node.js (v18+)
-* PostgreSQL (Local installation or cloud provider Supabase)
 
+  * Node.js (v18+)
+  * PostgreSQL (Local or Supabase)
+
+*(Installation steps follow here)*
