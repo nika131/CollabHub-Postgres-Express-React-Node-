@@ -1,5 +1,6 @@
 import { pgTable, serial, text, timestamp, varchar, integer, pgEnum, boolean, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { int } from "zod";
 
 export const users = pgTable("users", {
     id: serial("id").primaryKey(),
@@ -70,6 +71,17 @@ export const notifications = pgTable('notifications', {
 }, (table) => [
     index("notif_user_idx").on(table.userId)
 ]);
+
+export const refreshTokens = pgTable('refresh_token', {
+    id: serial('id').primaryKey(),
+    jti: varchar('jti', { length: 255 }).notNull().unique(),
+    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade'}).notNull(),
+    hashedToken: text('token').notNull(),
+    replacedBy: integer('replaced_by'), //id of new token that replaced this one
+    isRevoked: boolean('is_revoked').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+})
 
 export const userRelations = relations(users, ({ one, many }) => ({
     profile: one(profiles, {
