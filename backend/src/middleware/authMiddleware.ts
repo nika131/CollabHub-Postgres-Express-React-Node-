@@ -14,7 +14,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     const token = authHeader && authHeader.split(" ")[1];
 
     if (!token) {
-        throw new AppError("No token provided, authorization denied.", 401);
+        return next(new AppError("No token provided, authorization denied.", 401));
     }
     
     try{

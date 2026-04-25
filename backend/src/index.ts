@@ -9,17 +9,20 @@ import applicationRoutes from "./routes/applicationRoutes.js"
 import { globalErrorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import cookieParser from 'cookie-parser';
 
 
 console.log("JWT Secret Loaded:", !!process.env.JWT_SECRET);
 
 const app = express();
 const httpServer = createServer(app);
+app.use(cookieParser());
 
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 
 app.use(cors({
     origin: clientUrl,
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -27,7 +30,9 @@ app.use(cors({
 export const io = new Server(httpServer, {
     cors: {
         origin: "http://localhost:5173",
-        methods: ["GET", "POST", "PATCH"]
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ['Content-Type', 'Authorization']
     }
 });
 

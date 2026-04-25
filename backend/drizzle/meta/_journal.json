@@ -15,6 +15,13 @@
       "when": 1776254133847,
       "tag": "0001_careless_wolfpack",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777148026049,
+      "tag": "0002_burly_patriot",
+      "breakpoints": true
     }
   ]
 }

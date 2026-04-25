@@ -2,7 +2,7 @@ import { db } from '../db/dbConnection.js';
 import { profiles, users, refreshTokens } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/AppError.js';
@@ -92,65 +92,70 @@ export const loginUser = async (req: Request, res: Response) => {
     });
 }
 
-export const refresh = async (req: AuthRequest, res: Response) => {
-    const oldRefreshToken = req.cookies.refreshToken;
-    if (!oldRefreshToken) throw new AppError("No refresh token provided", 401);
+export const refresh = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const oldRefreshToken = req.cookies?.refreshToken;
+        if (!oldRefreshToken) throw new AppError("No refresh token provided", 401);
 
-    const decoded = jwt.verify(oldRefreshToken, process.env.REFRESH_SECRET!) as { userId: number, jti: string};
-    
-    const [tokenRecord] = await db.select()
-        .from(refreshTokens)
-        .where(eq(refreshTokens.jti, decoded.jti));
+        const decoded = jwt.verify(oldRefreshToken, process.env.REFRESH_SECRET!) as { userId: number, jti: string};
+        
+        const [tokenRecord] = await db.select()
+            .from(refreshTokens)
+            .where(eq(refreshTokens.jti, decoded.jti));
 
-    if (!tokenRecord || tokenRecord.isRevoked) {
-        if (tokenRecord) {
-            await db.update(refreshTokens)
-                .set({ isRevoked: true})
-                .where(eq(refreshTokens.userId, tokenRecord.userId));
+        if (!tokenRecord || tokenRecord.isRevoked) {
+            if (tokenRecord) {
+                await db.update(refreshTokens)
+                    .set({ isRevoked: true})
+                    .where(eq(refreshTokens.userId, tokenRecord.userId));
+            }
+            throw new AppError("Security breach detected. Please login again.", 403)
         }
-        throw new AppError("Security breach detected. Please login again.", 403)
+
+        const isMatch = await bcrypt.compare(oldRefreshToken, tokenRecord.hashedToken );
+        if (!isMatch) throw new AppError("Invalid token authenticated", 403);
+
+        const newJti = uuidv4();
+        const newAccessToken = jwt.sign(
+            { userId: decoded.userId },
+            process.env.JWT_SECRET!,
+            { expiresIn: "15m"}
+        );
+        const newRefreshToken = jwt.sign(
+            { userId: decoded.userId, jti: newJti},
+            process.env.REFRESH_SECRET!,
+            { expiresIn: "1d"},
+        );
+
+        const newHashedRefresh = await bcrypt.hash(newRefreshToken, 10);
+
+        await db.transaction(async (tx) => {
+            await tx.update(refreshTokens)
+                .set({ isRevoked: true })
+                .where(eq(refreshTokens.id, tokenRecord.id));
+
+            await tx.insert(refreshTokens).values({
+                jti: newJti,
+                userId: decoded.userId,
+                hashedToken: newHashedRefresh,
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            });
+        });
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000,
+        })
+
+        res.status(200).json({
+            token: newAccessToken,
+        });
+    } catch (error) {
+        next(error)
     }
 
-    const isMatch = await bcrypt.compare(oldRefreshToken, tokenRecord.hashedToken );
-    if (!isMatch) throw new AppError("Invalid token authenticated", 403);
-
-    const newJti = uuidv4();
-    const newAccessToken = jwt.sign(
-        { userId: decoded.userId },
-        process.env.JWT_SECRET!,
-        { expiresIn: "15m"}
-    );
-    const newRefreshToken = jwt.sign(
-        { userId: decoded.userId, jti: newJti},
-        process.env.REFRESH_SECRET!,
-        { expiresIn: "1d"},
-    );
-
-    const newHashedRefresh = await bcrypt.hash(newRefreshToken, 10);
-
-    await db.transaction(async (tx) => {
-        await tx.update(refreshTokens)
-            .set({ isRevoked: true })
-            .where(eq(refreshTokens.id, tokenRecord.id));
-
-        await tx.insert(refreshTokens).values({
-            jti: newJti,
-            userId: decoded.userId,
-            hashedToken: newHashedRefresh,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        });
-    });
-
-    res.cookie("refreshToken", newRefreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000,
-    })
-
-    res.status(200).json({
-        token: newAccessToken,
-    });
 }
 
 export const getMe = async (req: AuthRequest, res: Response) => {
