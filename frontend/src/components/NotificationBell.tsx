@@ -42,7 +42,7 @@ export const NotificationBell = () => {
             toast(data.message, {
                 style: {borderRadius: '10px', background: '#333', color: '#fff'}
             });
-            setUnreadCount(prev => prev + 1)
+            setUnreadCount(perv => perv + 1)
             setNotifications(perv => [{ ...data, id: Date.now() }, ...perv])
         });
 

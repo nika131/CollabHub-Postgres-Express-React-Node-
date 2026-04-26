@@ -4,7 +4,7 @@ import { projects, users, applications, notifications, project_roles } from "../
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and } from "drizzle-orm";
 import { AppError } from "../utils/AppError.js";
-import { io, userSocketMap } from "../index.js";
+import { io, userTOSocket } from "../index.js";
 import { log } from "node:console";
 
 export const joinRequest = async (req: AuthRequest, res: Response) => {
@@ -60,7 +60,7 @@ export const joinRequest = async (req: AuthRequest, res: Response) => {
 
     })
 
-    const applicantSocketId = userSocketMap.get(project.ownerId);
+    const applicantSocketId = userTOSocket.get(project.ownerId);
     
     if (applicantSocketId) {
         io.to(applicantSocketId).emit("new_notification", {
@@ -164,7 +164,7 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
         return appData
     })
 
-    const applicantSocketId = userSocketMap.get(result.applicantId);
+    const applicantSocketId = userTOSocket.get(result.applicantId);
 
         if (applicantSocketId) {
             io.to(applicantSocketId).emit("new_notification", {

@@ -7,9 +7,7 @@ import Explore from "./pages/Explore";
 import ProtectedRoutes from "./components/ProtectedRoute";
 import ProjectDetails from "./pages/ProjectDetails";
 import { Toaster } from "react-hot-toast";
-import { useEffect } from "react";
-import { socket } from "./api/socket";
-import toast from "react-hot-toast";
+import { PublicRoute } from "./components/PublicRoute";
 
 function App() {
   return (
@@ -17,8 +15,11 @@ function App() {
       <Toaster position="bottom-right" reverseOrder={false} />
       <Navbar/>
         <Routes>
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
+          <Route element={<PublicRoute />} >
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+          </Route>
+          
 
           <Route element={<ProtectedRoutes />} >
             <Route path="/dashboard" element={<Dashboard />} />

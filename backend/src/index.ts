@@ -36,26 +36,32 @@ export const io = new Server(httpServer, {
     }
 });
 
-export const userSocketMap = new Map<number, string>();
+export const userTOSocket = new Map<number, string>();
+export const socketToUser = new Map<string, number>();
 
 io.on("connection", (Socket) => {
     console.log(`Device connected: ${Socket.id}`);
 
     Socket.on("register", (userId: number) => {
-        userSocketMap.set(userId, Socket.id);
+        userTOSocket.set(userId, Socket.id);
+        socketToUser.set(Socket.id, userId);
         console.log(`User ${userId} registered to socket ${Socket.id}`);
     });
 
     Socket.on("disconnect", () => {
-        for (let [userId, socketId] of userSocketMap.entries()) {
-            for (let[userId, socketId] of userSocketMap.entries()) {
-                if (socketId === Socket.id) {
-                    userSocketMap.delete(userId);
-                    break;
-                }
-            }
-            console.log(`Device disconnected: ${Socket.id}`);
+        const userId = socketToUser.get(Socket.id);
+        if(userId){
+            userTOSocket.delete(userId);
+            socketToUser.delete(Socket.id);
         }
+        /*
+        for (let[userId, socketId] of userSocketMap.entries()) {
+            if (socketId === Socket.id) {
+                userSocketMap.delete(userId);
+                break;
+            }
+        }*/
+        console.log(`Device disconnected: ${Socket.id}`);
     });
 })
 
@@ -74,4 +80,21 @@ httpServer.listen(PORT, () => {
     console.log(`Server and WebSocket is running on port ${PORT}`);
 })
 
+const gracefulShutdown = (signal: string) => {
+    console.log(`Received ${signal}. Force-releasing Port ${PORT}...`);
 
+    io.close();
+
+    httpServer.close(() => {
+        console.log('HTTP server closed.');
+        process.exit(0);
+    });
+
+    setTimeout(() => {
+        console.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+    }, 2000);
+
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+}

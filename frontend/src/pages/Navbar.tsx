@@ -1,11 +1,31 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { NotificationBell } from "../components/NotificationBell";
+import { Axios } from "axios";
+import { useEffect, useState } from "react";
+import api from "../api/axios";
 
 export default function Navbar() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const [user, setUser] = useState<any>(null);
     const token = localStorage.getItem("token");
 
-    
+    useEffect(() => {
+        const verifySession = async () => {
+            if (!token) {
+                setUser(null);
+                return;
+            }
+            try {
+                const res = await api.get("/auth/me");
+                setUser(res.data);
+            }catch (err) {
+                setUser(null);
+            }
+        };
+
+        verifySession();
+    }, [location.pathname, token]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -18,7 +38,7 @@ export default function Navbar() {
             <div className="max-w-6xl mx-auto flex justify-between items-center">
                 <Link to="/dashboard" className="text-xl font-bold text-blue-500">CollabHub</Link>
                 
-                {token && (
+                {user && (
                     <div className="flex items-center space-x-6">
                         <Link to="/projects" className="text-zinc-400 hover:text-white transition">Explore</Link>
                         <Link to="/dashboard" className="text-zinc-400 hover:text-white transition">My Profile</Link>
