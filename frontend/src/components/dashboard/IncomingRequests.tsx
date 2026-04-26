@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 export const IncomingRequests = () => {
     const [requests, setRequests] = useState<any[]>([]);
@@ -21,25 +22,37 @@ export const IncomingRequests = () => {
         fetchRequests();
     }, []);
 
-    const handleRespond = async (applicationId: number, status: 'accepted' | 'rejected', roleId: Number) => {
+    const handleRespond = async (applicationId: number, status: 'accepted' | 'rejected', roleId: Number, isConfirmed = false) => {
         try {
-            await api.patch(`/applications/requests/${applicationId}`, { status });
+            await api.patch(`/applications/requests/${applicationId}`, { 
+                status,
+                confirmFill: isConfirmed});
             toast.success(`Request ${status}!`);
 
             if (status === 'rejected') {
                 setRequests(prev => prev.filter(req => Number(req.applicationId) !== Number(applicationId)));
-            } else if (status = 'accepted'){
+            } else if (status === 'accepted'){
                 setRequests(prev => prev.map(req => {
                     if (req.roleId === roleId){
                         return { ...req, seatsFilled: req.seatsFilled + 1};
                     }
                     return req;
-            }))
-                
+                }))
             }
             
         } catch (err) {
-            toast.error("Failed to update request");
+            if (axios.isAxiosError(err)) {
+                if (err.response?.status === 409) {
+                    const proceed = window.confirm(
+                    "This will fill the last seat and automatically reject all other applicants for this role. Do you wish to Proceed?"
+                );
+
+                if (proceed) {
+                    handleRespond(applicationId, status, roleId, true);
+                }
+            }else{
+                toast.error("Failed to update request");
+            }}
         }
     };
 

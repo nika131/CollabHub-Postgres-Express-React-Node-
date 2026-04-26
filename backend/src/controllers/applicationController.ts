@@ -2,10 +2,11 @@ import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, notifications, project_roles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { AppError } from "../utils/AppError.js";
 import { io, userTOSocket } from "../index.js";
 import { log } from "node:console";
+import { create } from "node:domain";
 
 export const joinRequest = async (req: AuthRequest, res: Response) => {
     const projectId = req.params.id; 
@@ -106,7 +107,7 @@ export const getIncomingJoinRequests = async (req: AuthRequest, res: Response) =
 
 export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
     const { applicationId } = req.params;
-    const { status } = req.body;
+    const { status, confirmFill } = req.body;
     const userId = Number(req.userId);
 
     if (!['accepted', 'rejected'].includes(status)) {
@@ -138,14 +139,22 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
             .set({ status })
             .where(eq(applications.id, Number(applicationId)));
 
-        if (status === 'accepted') {
+        let cascadedRejections: { userId: number }[] = [];
+
+        if (status === 'accepted' ) {
             const [role] = await tx.select().from(project_roles).where(eq(project_roles.id, appData.roleId));
 
             if (!role || role.seatsFilled >= role.seatsTotal) {
                 throw new AppError("this role is already full", 400);
             }
 
+            const isFillingLastSeat = (role.seatsFilled + 1) >= role.seatsTotal;
+            if (isFillingLastSeat && !confirmFill) {
+                throw new AppError("CONFIRM_REQUIRED: This will fill role and reject others.", 409);
+            }
+
             const newFillCount = role.seatsFilled + 1;
+            const isNowFilled = newFillCount >= role.seatsTotal;
 
             await tx.update(project_roles)
                 .set({
@@ -153,6 +162,34 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
                     status: newFillCount >= role?.seatsTotal ? 'filled' : 'open'
                 })
                 .where(eq(project_roles.id, appData.roleId));
+
+            if (isNowFilled) {
+                cascadedRejections = await tx.select({ userId: applications.userId })
+                    .from(applications)
+                    .where(and(
+                        eq(applications.roleId, appData.roleId),
+                        eq(applications.status, 'pending'),
+                        ne(applications.id, appData.id)
+                    ));
+            }
+
+            if (cascadedRejections.length > 0) {
+                await tx.update(applications)
+                    .set({status: 'rejected'})
+                    .where(and(
+                        eq(applications.roleId, appData.roleId),
+                        eq(applications.status, 'pending'),
+                        ne(applications.id, appData.id)
+                    ));
+
+                const bulkNotifications = cascadedRejections.map(rejectedUser => ({
+                    userId: rejectedUser.userId,
+                    type: 'rejected',
+                    message: `The role you applied for in ${appData.projectTitle} has been filled`
+                }))
+
+                await tx.insert(notifications).values(bulkNotifications);
+            }
         }
 
         await tx.insert(notifications).values({
@@ -161,21 +198,34 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
             message: `Your request to join ${appData.projectTitle} was ${status}.`
         });
 
-        return appData
+        return  { appData, cascadedRejections };
     })
 
-    const applicantSocketId = userTOSocket.get(result.applicantId);
+    const applicantSocketId = userTOSocket.get(result.appData.applicantId);
+    if (applicantSocketId) {
+        io.to(applicantSocketId).emit("new_notification", {
+            type: status,
+            message: `Your request to join ${result.appData.projectTitle} was ${status}.`,
+            createdAt: new Date().toISOString()
+        })
+        console.log(`WebSocket Sent to User ${result.appData.applicantId}`);
+    } else {
+        console.log(`User ${result.appData.applicantId} is offline. Notification saved to DB only.`)
+    }
 
-        if (applicantSocketId) {
-            io.to(applicantSocketId).emit("new_notification", {
-                type: status,
-                message: `Your request to join ${result.projectTitle} was ${status}.`,
-                createdAt: new Date().toISOString()
-            })
-            console.log(`WebSocket Sent to User ${result.applicantId}`);
-        } else {
-            console.log(`User ${result.applicantId} is offline. Notification saved to DB only.`)
-        }
+    if(result.cascadedRejections?.length > 0) {
+        result.cascadedRejections.forEach(rejectedUSer => {
+            const rejectedSocketId = userTOSocket.get(rejectedUSer.userId);
+            if (rejectedSocketId) {
+                io.to(rejectedSocketId).emit("new_notification", {
+                    type: 'rejected',
+                    message: `The role you applied for in {result.appData.projectTitle} has been filled`,
+                    createdAt: new Date().toISOString() 
+                })
+            }
+        });
+        console.log(`Cascade: Fired ${result.cascadedRejections.length} collateral rejection sockets.`);
+    } 
 
     
 
