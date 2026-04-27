@@ -107,7 +107,7 @@ export const getIncomingJoinRequests = async (req: AuthRequest, res: Response) =
 
 export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
     const { applicationId } = req.params;
-    const { status, confirmFill } = req.body;
+    const { status, confirm, confirmAutoReject } = req.body;
     const userId = Number(req.userId);
 
     if (!['accepted', 'rejected'].includes(status)) {
@@ -149,8 +149,8 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
             }
 
             const isFillingLastSeat = (role.seatsFilled + 1) >= role.seatsTotal;
-            if (isFillingLastSeat && !confirmFill) {
-                throw new AppError("CONFIRM_REQUIRED: This will fill role and reject others.", 409);
+            if (isFillingLastSeat && !confirm) {
+                throw new AppError("CONFIRM_REQUIRED", 409);
             }
 
             const newFillCount = role.seatsFilled + 1;
@@ -159,36 +159,36 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
             await tx.update(project_roles)
                 .set({
                     seatsFilled: newFillCount,
-                    status: newFillCount >= role?.seatsTotal ? 'filled' : 'open'
+                    status: isNowFilled ? 'filled' : 'open'
                 })
                 .where(eq(project_roles.id, appData.roleId));
+            
+            if (isNowFilled && confirmAutoReject === true){
+                await tx.update(applications)
+                        .set({status: 'rejected'})
+                        .where(and(
+                            eq(applications.roleId, appData.roleId),
+                            eq(applications.status, 'pending'),
+                            ne(applications.id, appData.id)
+                        ));
 
-            if (isNowFilled) {
                 cascadedRejections = await tx.select({ userId: applications.userId })
                     .from(applications)
                     .where(and(
                         eq(applications.roleId, appData.roleId),
-                        eq(applications.status, 'pending'),
+                        eq(applications.status, 'rejected'),
                         ne(applications.id, appData.id)
-                    ));
-            }
+                ));
 
-            if (cascadedRejections.length > 0) {
-                await tx.update(applications)
-                    .set({status: 'rejected'})
-                    .where(and(
-                        eq(applications.roleId, appData.roleId),
-                        eq(applications.status, 'pending'),
-                        ne(applications.id, appData.id)
-                    ));
+                if (cascadedRejections.length > 0) {
+                    const bulkNotifications = cascadedRejections.map(rejectedUser => ({
+                        userId: rejectedUser.userId,
+                        type: 'rejected',
+                        message: `The role you applied for in ${appData.projectTitle} has been filled`
+                    }))
 
-                const bulkNotifications = cascadedRejections.map(rejectedUser => ({
-                    userId: rejectedUser.userId,
-                    type: 'rejected',
-                    message: `The role you applied for in ${appData.projectTitle} has been filled`
-                }))
-
-                await tx.insert(notifications).values(bulkNotifications);
+                    await tx.insert(notifications).values(bulkNotifications);
+                }
             }
         }
 
@@ -219,7 +219,7 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
             if (rejectedSocketId) {
                 io.to(rejectedSocketId).emit("new_notification", {
                     type: 'rejected',
-                    message: `The role you applied for in {result.appData.projectTitle} has been filled`,
+                    message: `The role you applied for in ${result.appData.projectTitle} has been filled`,
                     createdAt: new Date().toISOString() 
                 })
             }

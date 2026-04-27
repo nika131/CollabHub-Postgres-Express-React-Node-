@@ -1,6 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { NotificationBell } from "../components/NotificationBell";
-import { Axios } from "axios";
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 

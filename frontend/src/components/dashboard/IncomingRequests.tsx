@@ -22,37 +22,46 @@ export const IncomingRequests = () => {
         fetchRequests();
     }, []);
 
-    const handleRespond = async (applicationId: number, status: 'accepted' | 'rejected', roleId: Number, isConfirmed = false) => {
+    const handleRespond = async (applicationId: number, status: 'accepted' | 'rejected', roleId: number, isConfirmed = false, isConfirmedAutoReject = false) => {
         try {
             await api.patch(`/applications/requests/${applicationId}`, { 
                 status,
-                confirmFill: isConfirmed});
+                confirm: isConfirmed,
+                confirmAutoReject: isConfirmedAutoReject});
             toast.success(`Request ${status}!`);
 
             if (status === 'rejected') {
                 setRequests(prev => prev.filter(req => Number(req.applicationId) !== Number(applicationId)));
             } else if (status === 'accepted'){
-                setRequests(prev => prev.map(req => {
-                    if (req.roleId === roleId){
-                        return { ...req, seatsFilled: req.seatsFilled + 1};
+                setRequests(prev => {
+                    if (isConfirmedAutoReject) {
+                        return prev.filter(req => req.roleId !== roleId);
                     }
-                    return req;
-                }))
+
+                    return prev
+                        .filter(req => req.applicationId !== applicationId)
+                        .map(req => roleId === req.roleId
+                            ? { ...req, seatsFilled: req.seatsFilled + 1}
+                            : req
+                        );
+                });
             }
             
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                if (err.response?.status === 409) {
-                    const proceed = window.confirm(
-                    "This will fill the last seat and automatically reject all other applicants for this role. Do you wish to Proceed?"
+            if (axios.isAxiosError(err) && err.response?.status === 409) {
+                const confirm = window.confirm(
+                    "This will fill the last seat! Do u wish to continue?"
+                );
+                if (!confirm) return;
+
+                const autoReject = window.confirm(
+                    "Click 'OK' to automaticaly reject all other applicants. \nClick 'Cancel' to keep them in your list (you can reject them manually)."
                 );
 
-                if (proceed) {
-                    handleRespond(applicationId, status, roleId, true);
-                }
+                handleRespond(applicationId, status, roleId, true, autoReject);
             }else{
                 toast.error("Failed to update request");
-            }}
+            }
         }
     };
 
