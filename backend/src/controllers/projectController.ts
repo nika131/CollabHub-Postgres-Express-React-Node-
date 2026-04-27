@@ -2,7 +2,7 @@ import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, project_roles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and, ilike, sql, or, not } from "drizzle-orm";
+import { eq, and, ilike, sql, or, not, lt, desc } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
 
@@ -107,33 +107,48 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
 };
 
 export const getAllProjects = async (req: AuthRequest, res: Response) => {
-    const { search } = req.query;
-    
-    let query = db.select(baseProjectSelection)
-        .from(projects)
-        .leftJoin(users, eq(projects.ownerId, users.id))
-        .$dynamic();
+    const { search, cursor, limit = 10 } = req.query;
+    const parsedLimit = Number(limit);
 
     const statusFilter = not(eq(projects.status, 'closed'));
+    const filters = [statusFilter];
 
-    if (search && typeof search === 'string') {
+    if (search && typeof search === 'string' && search.trim() !== '') {
         const searchTerm = `%${search}%`;
 
-        query = query.where(
-            and(
-                statusFilter,
-                or(
-                    ilike(projects.title, searchTerm),
-                    sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
-                )
-            )
+        const searchCondition = or(
+            ilike(projects.title, searchTerm),
+            sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
         );
-    }else {
-        query = query.where(statusFilter);
+
+        if (searchCondition) {
+            filters.push(searchCondition);
+        }
     }
 
-    const allProjects = await query;
-    res.json(allProjects);
+    if (cursor) {
+        filters.push(lt(projects.id, Number(cursor)));
+    }
+
+    const allProjects = await db.select(baseProjectSelection)
+        .from(projects)
+        .leftJoin(users, eq(projects.ownerId, users.id))
+        .where(and(...filters))
+        .orderBy(desc(projects.id))
+        .limit(parsedLimit + 1);
+
+    let nextCursor = null;
+    if (allProjects.length > parsedLimit) {
+        allProjects.pop();
+
+        const lastItem = allProjects[allProjects.length - 1];
+        nextCursor = lastItem?.id;
+    }
+
+    res.json({
+        data: allProjects,
+        nextCursor
+    });
 };
 
 export const getProjectById = async (req: AuthRequest, res: Response) => {
