@@ -45,10 +45,12 @@ export const ProjectCard = ({ project, onDelete, showDelete = false }: any) => {
                 
             </div>
             <div className="mt-6 pt-4 border-t border-zinc-800/50 flex justify-between items-center">
-                    <a href="{project.repoUrl}" target="_blank" className="text-sm text-blue-500 hover:underline">
+                    <a href={project.repoUrl} target="_blank" className="text-sm text-blue-500 hover:underline">
                         View Repo
                     </a>
-                    <span className="text-[10px] text-zinc-600 uppercase tracking-widset">
+                    <span className={`text-[10px] uppercase tracking-widset ${
+                        project.status === 'closed' ? 'text-red-800' : 'text-zinc-600'
+                    }`}>
                         {project.status || 'Active'}
                     </span>
             </div>

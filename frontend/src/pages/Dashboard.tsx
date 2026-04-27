@@ -12,11 +12,17 @@ export default function Dashboard() {
     const [projects, setProjects] = useState<any[]>([]);
     const [isAddingProject, setIsAddingProject] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [requestTrigger, setRequestTrigger] = useState(0);
 
     useEffect(() => {
         fetchProfile(),
         fetchProjects()
     }, []);
+
+    const refreshAllData = () => {
+        fetchProjects(),
+        setRequestTrigger(prev => prev + 1) // to trigger refresh in IncomingRequests
+    }
 
     const fetchProfile = async () => {
         try {
@@ -68,7 +74,7 @@ export default function Dashboard() {
                     <ProjectForm 
                         onSuccess={() => {
                             setIsAddingProject(false);
-                            fetchProjects();
+                            refreshAllData();
                         }}
                         onCancel={() => setIsAddingProject(false)}
                     />
@@ -102,7 +108,7 @@ export default function Dashboard() {
 
                 {/* --- 5. PEOJECT JOIN REQUESTS --- */}
                 <div>
-                    <IncomingRequests/>
+                    <IncomingRequests key={requestTrigger}/>
                 </div>
 
             </div>

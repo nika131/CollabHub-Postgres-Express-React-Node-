@@ -71,9 +71,25 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
         if (roles && roles.length > 0) {
             for (const role of roles) {
                 if (role.id){
-                    await tx.update(project_roles)
-                    .set({ title: role.title, seatsTotal: role.seatsTotal})
-                    .where(eq(project_roles.id, role.id));
+                    const [currentRole] = await tx.select()
+                        .from(project_roles)
+                        .where(eq(project_roles.id, role.id))
+
+                    if (currentRole) {
+                        if (currentRole.seatsFilled > role.seatsTotal) {
+                            throw new AppError(`Can not reduce the number of seats below the number of accepted applicants (${currentRole.seatsFilled})`, 400);
+                        }
+
+                        const isNowOpen = role.seatsTotal > currentRole.seatsFilled;
+
+                        await tx.update(project_roles)
+                            .set({ 
+                                title: role.title, 
+                                seatsTotal: role.seatsTotal,
+                                status: isNowOpen ? 'open' : 'filled'
+                            })
+                            .where(eq(project_roles.id, role.id));
+                    }
                 }else {
                     await tx.insert(project_roles).values({
                         projectId: updatedProject.id,
