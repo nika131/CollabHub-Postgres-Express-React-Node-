@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
+import { AvatartUpload } from "./AvatarUpload";
 
 interface ProfileSectionProps {
     profile: any,
@@ -100,9 +101,11 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
             ) : ( 
                 <div className="space-y-6">
                     <div className="flex items-center space-x-4">
-                        <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center text-2xl font-bold">
-                            {profile?.fullName ? profile.fullName.charAt(0) : "?"}
-                        </div>
+                        <AvatartUpload
+                            currentItem={profile?.profilePicUrl}
+                            onUpdate={() => onUpdate()}
+                        />
+
                         <div>
                             <h3 className="text-xl font-semibold">{profile?.fullName}</h3>
                             <p className="text-zinc-500">{profile?.location || 'Unknown Location'}</p>

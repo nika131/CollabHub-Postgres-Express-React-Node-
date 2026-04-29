@@ -2,6 +2,9 @@ import { db } from '../db/dbConnection.js';
 import { profiles, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { Request, Response } from "express";
+import type { AuthRequest } from "../middleware/authMiddleware.js";
+import { AppError } from '../utils/AppError.js';
+import { date } from 'zod';
 
 export const updateProfile = async (req: Request, res: Response) => {
     const { bio, location, interests, profilePicUrl } =req.body;
@@ -63,3 +66,22 @@ export const getMyProfile = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Error fetching profile"})
     }
 };
+
+export const updateAvatar = async (req: AuthRequest, res: Response) => {
+    const userId = Number(req.userId);
+
+    if (!req.file) {
+        throw new AppError("No file uploaded", 400);
+    }
+
+    const imageUrl = req.file.path;
+
+    await db.update(profiles)
+        .set({profilePicUrl: imageUrl, updatedAt: new Date()})
+        .where(eq(profiles.userId, userId));
+
+    res.json({
+        message: "Avatar updated successfully",
+        profilePicUrl: imageUrl
+    });
+}; 
