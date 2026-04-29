@@ -9,15 +9,24 @@ export default function Explore() {
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [fetchingMore, setFetchingMore] = useState(false);
+    const [viewMode, setViewMode] = useState<'all' | 'recommended'>('all');
+    const [emptyMessage, setEmptyMessage] = useState<string | null>(null);
 
 
-    const fetchInitialProjects = async (query= "") => {
+    const fetchInitialProjects = async (query= "", mode = viewMode) => {
         setLoading(true);
+        setEmptyMessage(null);
         try {
+            const endPoint = mode === 'recommended' ? '/projects/recommended' : '/projects/all';
+
             //const safeSearchTerm = encodeURIComponent(search);
-            const res = await api.get(`/projects/all?search=${query}&limit=10`);
-            setProjects(res.data.data);
-            setNextCursor(res.data.nextCursor); 
+            const res = await api.get(`${endPoint}?search=${query}&limit=10`);
+            setProjects(res.data.data || []);
+            setNextCursor(res.data.nextCursor || null);
+            
+            if (res.data.message) {
+                setEmptyMessage(res.data.message);
+            }
         } catch (err) {
             console.error("Failed to fetch projects", err);
         } finally {
@@ -30,9 +39,10 @@ export default function Explore() {
         setFetchingMore(true);
 
         try {
-            const res = await api.get(`/projects/all?limit=10&cursor=${nextCursor}`);
+            const endPoint = viewMode === 'recommended' ? '/projects/recommended' : '/projects/all';
+            const res = await api.get(`${endPoint}?search=${searchQuery}&limit=10&cursor=${nextCursor}`);
 
-            setProjects(prev => [...prev, ...res.data.data]);
+            setProjects(prev => [...prev, ...(res.data.data || [])]);
             setNextCursor(res.data.nextCursor);
         } catch (err) {
             console.error("Failed to fetch more projects", err);
@@ -42,8 +52,8 @@ export default function Explore() {
     };
 
     useEffect(() => {
-        fetchInitialProjects(searchQuery);
-    }, [searchQuery]);
+        fetchInitialProjects(searchQuery, viewMode);
+    }, [searchQuery, viewMode]);
    
 
     const handleProjectDeleted = (deleteProjectId: number) => {
@@ -55,8 +65,31 @@ export default function Explore() {
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8">
             <div className="max-w-6xl mx-auto">
+
+                {/* Header & Toggle Section */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <h1 className="text-3xl font-bold text-blue-500">Explore Projects</h1>
+                    <div className="flex flex-col gap-4 w-full md:w-auto">
+                        <h1 className="text-3xl font-bold text-blue-500">Explore Projects</h1>
+
+                        <div className="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1 w-fit">
+                            <button
+                                onClick={() => setViewMode('all')}
+                                className={`px-4 py-2 rounded-md text-sm font-bold transition ${
+                                    viewMode === 'all' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'
+                                }`}
+                            >
+                                global
+                            </button>
+                            <button
+                                onClick={() => setViewMode('recommended')}
+                                className={`px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2${
+                                    viewMode === 'recommended' ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'
+                                }`}
+                            >
+                                For you
+                            </button>
+                        </div>
+                    </div>
 
                     <input 
                         type="text"
@@ -67,6 +100,15 @@ export default function Explore() {
                     />
                 </div>
 
+                {/* Empty State Message for Recommendations */}
+                {emptyMessage && viewMode === 'recommended' && (
+                    <div className="bg-blue-900/10 border border-blue-500/20 p-6 rounded-xl text-center mb-6">
+                        <p className="text-blue-500 font-bold">{emptyMessage}</p>
+                    </div>
+                )}
+
+
+                {/* Project Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {!loading ?(
                         projects.length > 0 ? (
@@ -86,7 +128,7 @@ export default function Explore() {
                         </div>
                     )}
                     
-
+                    {/* Pagination Button */}
                     {nextCursor && (
                         <div className="flex justify-center mt-12 mb-8">
                             <button

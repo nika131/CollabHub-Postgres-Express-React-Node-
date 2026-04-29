@@ -1,11 +1,11 @@
 import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
-import { projects, users, applications, project_roles } from "../db/schema.js";
+import { projects, users, applications, project_roles, profiles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and, ilike, sql, or, not, lt, desc, arrayOverlaps } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
-import { array } from "zod";
+import { cursorPagination } from "../utils/pagination.js";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
     const currentUserId = Number(req.userId);
@@ -138,18 +138,14 @@ export const getAllProjects = async (req: AuthRequest, res: Response) => {
         .orderBy(desc(projects.id))
         .limit(parsedLimit + 1);
 
-    let nextCursor = null;
-    if (allProjects.length > parsedLimit) {
-        allProjects.pop();
 
-        const lastItem = allProjects[allProjects.length - 1];
-        nextCursor = lastItem?.id;
-    }
 
-    res.json({
-        data: allProjects,
-        nextCursor
-    });
+    res.json(
+        cursorPagination(
+            allProjects,
+            parsedLimit
+        )
+    );
 };
 
 export const getProjectById = async (req: AuthRequest, res: Response) => {
@@ -217,13 +213,56 @@ export const getProjectAndUserInfobyId = async (req: AuthRequest, res: Response)
     });
 };
 
-/*
+
 export const getRecomendedProjects = async (req: AuthRequest, res : Response) => {
     const currentUserId = Number(req.userId);
+    const { search, cursor, limit = 10 } = req.query;
+    const parsedLimit = Number(limit);
+
+    const [userInterests] = await db.select({ interests: profiles.interests})
+        .from(profiles)
+        .where(eq(profiles.userId, currentUserId));
+    
+    const interestsArray = userInterests?.interests || [];
+
+    if (interestsArray.length === 0) {
+        return res.json({
+            data: [],
+            nextCursor: null,
+            message: "No interests defined in profile. Please update your profile to see recommended projects."
+        })
+    }
+
+    const statusFilter = not(eq(projects.status, 'closed'));
+    const overlapsFilter = arrayOverlaps(projects.techStack, interestsArray);
+    const fillters = [statusFilter, overlapsFilter];
+
+    if (search && typeof search === 'string' && search.trim() !== '') {
+        const searchTerm = `%${search}%`;
+
+        const searchCondition = or(
+            ilike(projects.title, searchTerm),
+            sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
+        );
+        if (searchCondition) fillters.push(searchCondition);
+    }
+
+    if (cursor) {
+        fillters.push(lt(projects.id, Number(cursor)));
+    }
 
     const mathchingProjects = await db.select(baseProjectSelection)
         .from(projects)
         .leftJoin(users, eq(projects.ownerId, users.id))
-        .where(arrayOverlaps(projects.techStack))
+        .where(and(...fillters))
+        .orderBy(desc(projects.id))
+        .limit(parsedLimit + 1);
+
+    res.json(
+        cursorPagination(
+            mathchingProjects,
+            parsedLimit
+        )
+    );
 }
-*/
+

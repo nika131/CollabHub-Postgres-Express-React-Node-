@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createProject, getAllProjects, updateProject, DeleteProject, getMyProjects, getProjectAndUserInfobyId } from "../controllers/projectController.js";
+import { createProject, getAllProjects, updateProject, DeleteProject, getMyProjects, getProjectAndUserInfobyId, getRecomendedProjects } from "../controllers/projectController.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { createProjectSchema, updateProjectSchema } from "../validations/projectSchema.js";
 import { validate } from "../middleware/validate.js";
@@ -10,6 +10,7 @@ const router = Router();
 router.get("/my/all", authenticate, getMyProjects);
 router.post("/", authenticate, validate(createProjectSchema), createProject);
 router.get("/all", authenticate, getAllProjects);
+router.get("/recommended", authenticate, getRecomendedProjects);
 
 
 router.get("/:id", authenticate, getProjectAndUserInfobyId);
