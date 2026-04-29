@@ -2,9 +2,10 @@ import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, project_roles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and, ilike, sql, or, not, lt, desc } from "drizzle-orm";
+import { eq, and, ilike, sql, or, not, lt, desc, arrayOverlaps } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
+import { array } from "zod";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
     const currentUserId = Number(req.userId);
@@ -216,3 +217,13 @@ export const getProjectAndUserInfobyId = async (req: AuthRequest, res: Response)
     });
 };
 
+/*
+export const getRecomendedProjects = async (req: AuthRequest, res : Response) => {
+    const currentUserId = Number(req.userId);
+
+    const mathchingProjects = await db.select(baseProjectSelection)
+        .from(projects)
+        .leftJoin(users, eq(projects.ownerId, users.id))
+        .where(arrayOverlaps(projects.techStack))
+}
+*/

@@ -1,7 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { AvatartUpload } from "./AvatarUpload";
+import { TagInput } from "../common/TagInput";
+import { TECH_SKILLS } from "../../constants/techSkills";
+import { FormInput } from "../common/FormInput";
+import { FormTextArea } from "../common/FormTextArea";
 
 interface ProfileSectionProps {
     profile: any,
@@ -11,38 +15,54 @@ interface ProfileSectionProps {
 export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [formData, setFormData] = useState({
+        fullName: '',
         bio: '',
         location: '',
-        interests: '',
+        interests: [] as string[],
     });
 
-    useEffect(() => {
-        if(profile) {
+    useEffect( () => {
+        if (profile){
             setFormData({
-                bio: profile.bio || '',
-                location: profile.location || '',
-                interests: profile.interests?.join(', ') || ''
-            });
+                fullName: profile.fullName || '',
+                 bio: profile.bio || '',
+                 location: profile.location || '',
+                interests: profile.interests || [] as string[],
+            })
         }
-    }, [profile])
+    }, [profile]);
 
     const handleSave = async () => {
         setLoading(true);
         try {
-            const payload = {
-                ...formData,
-                interests: formData.interests
-                    .split(',')
-                    .map(i => i.trim())
-                    .filter(i => i !== '')
-            };
-            await api.put('/profiles', payload);
+            await api.put('/profiles', formData);
             toast.success("Profile updated successfully!");
             setIsEditing(false);
             onUpdate();
-        }catch (err) { 
-            console.error("Profile update error: ", err);
+        }catch (err: any) { 
+            const responseData = err?.response?.data;
+
+            if (err.response?.status === 400 && responseData?.errors) {
+                const errorMap: Record<string, string> = {};
+
+                Object.entries(responseData.errors).forEach(([field, messages]: [string, any]) => {
+                    if (Array.isArray(messages) && messages.length > 0) {
+                        errorMap[field] = messages[0];
+                    }else if (typeof messages === 'string') {
+                        errorMap[field] = messages;
+                    }
+                });
+
+                setFieldErrors(errorMap);
+            } else {
+                console.error("Non-array error recived: ", responseData);
+
+                if (responseData?.message) {
+                    toast.error("Erros: " + responseData.message);
+                }
+            }
         }finally {
             setLoading(false);
         }
@@ -62,34 +82,38 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
 
             {isEditing ? (
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm text-zinc-500 mb-1">Location</label>
-                        <input 
-                            value={formData.location}
-                            onChange={(e) => setFormData({...formData, location: e.target.value})}
-                            className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 focus:outline-none focus:border-blue-500"
-                            placeholder="e.g. Tbilisi, Georgia" 
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm text-zinc-500 mb-1">Bio</label>
-                        <textarea 
-                            value={formData.bio}
-                            onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                            rows={3}
-                            className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 focus:outline-none focus:border-blue-500"
-                            placeholder="Tell us about yourself..."
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm text-zinc-500 mb-1">Interests</label>
-                        <textarea 
-                            value={formData.interests}
-                            onChange={(e) => setFormData({...formData, interests: e.target.value})}
-                            className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 focus:outline-none focus:border-blue-500"
-                            placeholder="React, Node.js, etc."
-                        />
-                    </div>
+                    <label className="block text-sm text-zinc-500 mb-1">Full Name</label>
+                    <FormInput
+                        placeholder="full name"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                        error={fieldErrors.fullName}
+                        disabled={loading}
+                    />
+                    <label className="block text-sm text-zinc-500 mb-1">Location</label>
+                    <FormInput
+                        placeholder="location"
+                        value={formData.location}
+                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        error={fieldErrors.location}
+                        disabled={loading}
+                    />
+                    <label className="block text-sm text-zinc-500 mb-1">Bio</label>
+                    <FormTextArea
+                        placeholder="Tell us about yourself..."
+                        value={formData.bio}
+                        onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                        error={fieldErrors.bio}
+                        disabled={loading}
+                    />
+                    <label className="block text-sm text-zinc-500 mb-1">Interests</label>
+                    <TagInput
+                        tags={formData.interests}
+                        setTags={(Tags) => setFormData({...formData, interests: Tags})}
+                        options={TECH_SKILLS}
+                        placeholder="Your interests/skills"
+                        error={fieldErrors.interests}
+                    />
                     <button
                         onClick={handleSave}
                         disabled={loading}

@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 import type { Request, Response } from "express";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { AppError } from '../utils/AppError.js';
-import { date } from 'zod';
 
 export const updateProfile = async (req: Request, res: Response) => {
     const { bio, location, interests, profilePicUrl } =req.body;
