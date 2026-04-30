@@ -22,6 +22,13 @@
       "when": 1777148026049,
       "tag": "0002_burly_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777535713501,
+      "tag": "0003_sudden_lady_ursula",
+      "breakpoints": true
     }
   ]
 }

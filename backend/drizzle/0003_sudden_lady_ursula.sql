@@ -1,0 +1,1 @@
+CREATE INDEX "project_search_idx" ON "projects" USING gin (to_tsvector('english', coalesce("title", '') || ' ' || coalesce("description", '') || ' ' || coalesce(array_to_string("tech_stack", ' '), '')));

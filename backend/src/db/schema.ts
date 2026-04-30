@@ -1,5 +1,5 @@
 import { pgTable, serial, text, timestamp, varchar, integer, pgEnum, boolean, index } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { int } from "zod";
 
 export const users = pgTable("users", {
@@ -22,8 +22,13 @@ export const projects = pgTable("projects", {
     ownerId: integer("owner_id").references(() => users.id, { onDelete: 'cascade'}).notNull(),
     createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-    index("project_owner_idx").on(table.ownerId)
-])
+    index("project_owner_idx").on(table.ownerId),
+
+    index("project_search_idx").using(
+        "gin",
+        sql`to_tsvector('english', coalesce(${table.title}, '') || ' ' || coalesce(${table.description}, '') || ' ' || coalesce(array_to_string(${table.techStack}, ' '), ''))`
+    )
+]);
 
 
 export const profiles = pgTable("profiles", {

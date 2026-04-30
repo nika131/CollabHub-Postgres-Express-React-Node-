@@ -6,6 +6,7 @@ import { eq, and, ilike, sql, or, not, lt, desc, arrayOverlaps } from "drizzle-o
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
 import { cursorPagination } from "../utils/pagination.js";
+import { getProjectsSearchUtils } from "../utils/search.js";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
     const currentUserId = Number(req.userId);
@@ -114,16 +115,14 @@ export const getAllProjects = async (req: AuthRequest, res: Response) => {
     const statusFilter = not(eq(projects.status, 'closed'));
     const filters = [statusFilter];
 
-    if (search && typeof search === 'string' && search.trim() !== '') {
-        const searchTerm = `%${search}%`;
+    let sorting = [desc(projects.id)]
 
-        const searchCondition = or(
-            ilike(projects.title, searchTerm),
-            sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
-        );
-
-        if (searchCondition) {
-            filters.push(searchCondition);
+    if (typeof search == 'string' && search.trim() !== ''){
+        const searchUtils = getProjectsSearchUtils(search);
+        
+        if (searchUtils) {
+            filters.push(searchUtils.condition);
+            sorting = [desc(searchUtils.rank), desc(projects.id)]
         }
     }
 
@@ -131,14 +130,16 @@ export const getAllProjects = async (req: AuthRequest, res: Response) => {
         filters.push(lt(projects.id, Number(cursor)));
     }
 
-    const allProjects = await db.select(baseProjectSelection)
+    const query = db.select(baseProjectSelection)
         .from(projects)
         .leftJoin(users, eq(projects.ownerId, users.id))
         .where(and(...filters))
-        .orderBy(desc(projects.id))
+        .orderBy(...sorting)
         .limit(parsedLimit + 1);
+        
+    console.log("DEBUG SQL:", query.toSQL());
 
-
+    const allProjects = await query
 
     res.json(
         cursorPagination(
@@ -237,14 +238,14 @@ export const getRecomendedProjects = async (req: AuthRequest, res : Response) =>
     const overlapsFilter = arrayOverlaps(projects.techStack, interestsArray);
     const fillters = [statusFilter, overlapsFilter];
 
-    if (search && typeof search === 'string' && search.trim() !== '') {
-        const searchTerm = `%${search}%`;
+    let sorting = [desc(projects.id)]
 
-        const searchCondition = or(
-            ilike(projects.title, searchTerm),
-            sql`array_to_string(${projects.techStack}, ',') ILIKE ${searchTerm}`
-        );
-        if (searchCondition) fillters.push(searchCondition);
+    if (typeof search === 'string') {
+        const searchUtils = getProjectsSearchUtils(search);
+        if (searchUtils) {
+            fillters.push(searchUtils.condition);
+            sorting = [desc(searchUtils.rank), desc(projects.id)]
+        }
     }
 
     if (cursor) {
@@ -255,7 +256,7 @@ export const getRecomendedProjects = async (req: AuthRequest, res : Response) =>
         .from(projects)
         .leftJoin(users, eq(projects.ownerId, users.id))
         .where(and(...fillters))
-        .orderBy(desc(projects.id))
+        .orderBy(...sorting)
         .limit(parsedLimit + 1);
 
     res.json(
