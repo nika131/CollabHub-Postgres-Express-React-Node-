@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware.js";
-import { joinRequest, getIncomingJoinRequests, respondToJoinRequest } from "../controllers/applicationController.js";
+import { joinRequest, getIncomingJoinRequests, respondToJoinRequest} from "../controllers/applicationController.js";
 import { validate } from "../middleware/validate.js";
 import { JoinRequestSchema, respondRequestSchema } from "../validations/applicationSchema.js";
 

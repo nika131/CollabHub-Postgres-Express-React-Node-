@@ -30,6 +30,7 @@ export default function ProjectDetailes() {
         }
     };
 
+
     if (loading) return <Loader message="Decrypting project files..."/>
     if (!project) return <div className="text-white p-10">Project not found.</div>
 
@@ -72,16 +73,42 @@ export default function ProjectDetailes() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-zinc-800 pt-8 ">
-                    <div>
-                        <h3 className="text-xl font-semibold mb-4 text-zinc-100">Tech Stack</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {project.techStack?.map((tech: string) => (
-                                <span key={tech} className="bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-lg text-sm text-zinc-300">
-                                    {tech}
-                                </span>
-                            ))}
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            <h3 className="text-xl font-semibold mb-4 text-zinc-100">Tech Stack</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {project.techStack?.map((tech: string) => (
+                                    <span key={tech} className="bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-lg text-sm text-zinc-300">
+                                        {tech}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-xl font-semibold mb-4 text-zinc-100">Group Members</h3>
+                            <div className="flex flex-col gap-2">
+                                {project.members.length > 0 ? (
+                                    project.members?.map((member: any) => (
+                                        <div key={member.memberId} className="flex items-center text-sm">
+                                            <Link 
+                                                to={`/profiles/${member.memberId}`}
+                                                className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                                            >
+                                                {member.membername}
+                                            </Link>
+                                            <span className="ml-1.5 text-zinc-500 text-xs">
+                                                ({member.memberRole})
+                                            </span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <span className="text-zinc-500 italic">only visible for members and project owner</span>
+                                )}
+                            </div>
                         </div>
                     </div>
+                    
 
                     <div className="flex flex-col gap-4">
 

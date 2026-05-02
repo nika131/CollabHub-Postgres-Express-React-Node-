@@ -6,7 +6,7 @@ import { ProfileSection } from "../components/dashboard/ProfileSection";
 import { IncomingRequests } from "../components/dashboard/IncomingRequests";
 import { Loader } from "../components/common/Loader";
 import { useParams } from "react-router-dom";
-
+import { InfoDahboardBox } from "../components/dashboard/infoDashboardBox";
 
 export default function Dashboard() {
     const [profile, setProfile] = useState<any>(null);
@@ -14,6 +14,7 @@ export default function Dashboard() {
     const [isAddingProject, setIsAddingProject] = useState(false);
     const [loading, setLoading] = useState(true);
     const [requestTrigger, setRequestTrigger] = useState(0);
+    const [joinedProjects, setJoinedProjects] = useState<any[]>([])
     const { userId } = useParams()
     const currentUser = JSON.parse(localStorage.getItem('user_info') || '{}');
 
@@ -21,6 +22,7 @@ export default function Dashboard() {
         setProfile(null),
         setLoading(true),
 
+        fetchJoinedProjects(),
         fetchProfile(),
         fetchProjects()
     }, [userId]);
@@ -48,7 +50,16 @@ export default function Dashboard() {
             console.error("Failed to fetch projects", err); 
         }
         setLoading(false)
-    }                   
+    }                
+    
+    const fetchJoinedProjects = async () => {
+        try{
+            const res = await api.get('/projects/participatingProjects');
+            setJoinedProjects(res.data.acceptedApplications || res.data);
+        }catch (err) {
+             console.error("Failed to fetch projects", err); 
+        }
+    }
 
     const isOwner = String(currentUser.id) === String(userId);
 
@@ -58,10 +69,21 @@ export default function Dashboard() {
             <div className="max-w-6xl space-y-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
                 
                 {/* --- 1. PROFILE COMPONENT --- */}
-                <ProfileSection
-                    profile={profile}
-                    onUpdate={fetchProfile}
-                />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <div className="lg:col-span-2">
+                        <ProfileSection
+                        profile={profile}
+                        onUpdate={fetchProfile}
+                    />
+                    </div>
+                    
+                    <div className="lg:col-span-1">
+                        <InfoDahboardBox 
+                            projects={joinedProjects}
+                        />
+                    </div>
+                </div>
+               
 
                 {/* --- 2. PROJECTS HEADER --- */}
                 <div>

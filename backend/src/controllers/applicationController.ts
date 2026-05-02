@@ -5,8 +5,6 @@ import type { AuthRequest } from "../middleware/authMiddleware.js";
 import { eq, and, ne } from "drizzle-orm";
 import { AppError } from "../utils/AppError.js";
 import { io, userTOSocket } from "../index.js";
-import { log } from "node:console";
-import { create } from "node:domain";
 
 export const joinRequest = async (req: AuthRequest, res: Response) => {
     const projectId = req.params.id; 

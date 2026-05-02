@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createProject, getAllProjects, updateProject, DeleteProject, getUserProjects, getProjectAndUserInfobyId, getRecomendedProjects } from "../controllers/projectController.js";
+import { createProject, getAllProjects, updateProject, DeleteProject, getUserProjects, getProjectAndUserInfobyId, getRecomendedProjects, getParticipatingProjects } from "../controllers/projectController.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { createProjectSchema, updateProjectSchema } from "../validations/projectSchema.js";
 import { validate } from "../middleware/validate.js";
@@ -13,6 +13,7 @@ router.get("/all", authenticate, getAllProjects);
 router.get("/recommended", authenticate, getRecomendedProjects);
 
 
+router.get("/participatingProjects", authenticate, getParticipatingProjects)
 router.get("/:id", authenticate, getProjectAndUserInfobyId);
 router.patch("/:id", authenticate, isProjectOwner, validate(updateProjectSchema), updateProject);
 router.delete("/:id", authenticate, isProjectOwner, DeleteProject);

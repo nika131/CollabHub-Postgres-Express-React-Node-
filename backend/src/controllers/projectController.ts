@@ -1,4 +1,4 @@
-import { type Response } from "express";
+import { application, type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, project_roles, profiles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
@@ -7,6 +7,7 @@ import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
 import { cursorPagination } from "../utils/pagination.js";
 import { getProjectsSearchUtils } from "../utils/search.js";
+import { any } from "zod";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
     const currentUserId = Number(req.userId);
@@ -207,11 +208,44 @@ export const getProjectAndUserInfobyId = async (req: AuthRequest, res: Response)
         .from(project_roles)
         .where(eq(project_roles.projectId, Number(id)));
 
+    const [isMember] = await db.select()
+        .from(applications)
+        .where(
+            and(
+                eq(applications.projectId, projectAndUserInfo.id), 
+                eq(applications.userId, currentUserId), 
+                eq(applications.status, 'accepted')
+            )
+        )
+
+    interface ProjectMember {
+        membername: string | null;
+        memberId: number | string;
+        memberRole: string | null;
+    }
+
+    let projectMembers: ProjectMember[] = [];
+
+    if(currentUserId === projectAndUserInfo.ownerId || isMember) {
+        projectMembers = await db.select({ 
+            membername: users.fullName,
+            memberId: applications.userId, 
+            memberRole: project_roles.title})
+            .from(applications)
+            .leftJoin(users, eq(users.id, applications.userId))
+            .leftJoin(project_roles, eq(project_roles.id, applications.roleId))
+            .where(and(
+                eq(applications.status, 'accepted'), 
+                eq(applications.projectId, projectAndUserInfo.id)))
+    }
+    
+
     res.json({
         ...projectAndUserInfo,
         vaultLink: secureVaultLink,
         roles: projectRolesData,
-        userStatus: userApplication ? userApplication.status : 'none'
+        userStatus: userApplication ? userApplication.status : 'none',
+        members: projectMembers
     });
 };
 
@@ -266,5 +300,18 @@ export const getRecomendedProjects = async (req: AuthRequest, res : Response) =>
             parsedLimit
         )
     );
+}
+
+export const getParticipatingProjects = async (req: AuthRequest, res: Response) => {
+    const currentuserId = Number(req.userId)
+
+    const acceptedApplications = await db.select({ projectId: applications.projectId, projectTitle: projects.title})
+        .from(applications)
+        .innerJoin(projects, eq(projects.id, applications.projectId))
+        .where(and(eq(applications.userId, currentuserId), eq(applications.status, 'accepted')))
+
+    res.json({
+        acceptedApplications
+    })
 }
 
