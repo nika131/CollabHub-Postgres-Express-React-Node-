@@ -5,6 +5,7 @@ import { ProjectForm } from "../components/dashboard/ProjectForm";
 import { ProfileSection } from "../components/dashboard/ProfileSection";
 import { IncomingRequests } from "../components/dashboard/IncomingRequests";
 import { Loader } from "../components/common/Loader";
+import { useParams } from "react-router-dom";
 
 
 export default function Dashboard() {
@@ -13,11 +14,16 @@ export default function Dashboard() {
     const [isAddingProject, setIsAddingProject] = useState(false);
     const [loading, setLoading] = useState(true);
     const [requestTrigger, setRequestTrigger] = useState(0);
+    const { userId } = useParams()
+    const currentUser = JSON.parse(localStorage.getItem('user_info') || '{}');
 
     useEffect(() => {
+        setProfile(null),
+        setLoading(true),
+
         fetchProfile(),
         fetchProjects()
-    }, []);
+    }, [userId]);
 
     const refreshAllData = () => {
         fetchProjects(),
@@ -26,7 +32,7 @@ export default function Dashboard() {
 
     const fetchProfile = async () => {
         try {
-            const res = await api.get('/profiles/me');
+            const res = await api.get(`/profiles/${userId}`);
             setProfile(res.data);
         }catch (err) {
             console.error("Failed to fetch profile", err);
@@ -35,7 +41,7 @@ export default function Dashboard() {
 
     const fetchProjects = async () => {
         try {
-            const res = await api.get('/projects/my/all');
+            const res = await api.get(`/projects/${userId}/all`);
             setProjects(res.data);
 
         }catch (err) { 
@@ -44,7 +50,8 @@ export default function Dashboard() {
         setLoading(false)
     }                   
 
-    
+    const isOwner = String(currentUser.id) === String(userId);
+
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8"> 
@@ -60,7 +67,7 @@ export default function Dashboard() {
                 <div>
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-xl font-bold">My Projects</h3>
-                        {!isAddingProject && (
+                        {isOwner && !isAddingProject &&(
                             <button
                                 onClick={() => setIsAddingProject(true)}
                                 className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-bold transition"
@@ -70,7 +77,7 @@ export default function Dashboard() {
                     </div>
 
                 {/* --- 3. ADD PROJECT FORM --- */}
-                {isAddingProject && (
+                {isOwner && isAddingProject &&(
                     <ProjectForm 
                         onSuccess={() => {
                             setIsAddingProject(false);
@@ -89,7 +96,7 @@ export default function Dashboard() {
                                 key={project.id}
                                 project={project}
                                 onDelete={fetchProjects}
-                                showDelete={true}
+                                showDelete={isOwner}
                             />
                         ))
                         ) : (
@@ -99,7 +106,7 @@ export default function Dashboard() {
                         )
                     ) : (
                         <div className="col-span-full flex justify-center py-12 w-full">
-                            <Loader message="Loading your projects"/>
+                            <Loader message="Loading projects"/>
                         </div>
                     )}
                     
@@ -108,7 +115,9 @@ export default function Dashboard() {
 
                 {/* --- 5. PEOJECT JOIN REQUESTS --- */}
                 <div>
-                    <IncomingRequests key={requestTrigger}/>
+                    {isOwner && (
+                        <IncomingRequests key={requestTrigger}/>
+                    )}
                 </div>
 
             </div>

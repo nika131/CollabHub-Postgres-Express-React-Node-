@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import {  Link, useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { JoinRequestButton } from "../components/JoinRequestButton";
 import { Loader } from "../components/common/Loader"
@@ -33,7 +33,8 @@ export default function ProjectDetailes() {
     if (loading) return <Loader message="Decrypting project files..."/>
     if (!project) return <div className="text-white p-10">Project not found.</div>
 
-    const isOwner = currentUser.id === project.ownerId;
+    const isOwner = String(currentUser.id) === String(project.ownerId);
+
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8">
@@ -55,7 +56,9 @@ export default function ProjectDetailes() {
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h1 className="text-4xl font-bold text-blue-500">{project.title}</h1>
-                        <p className="text-zinc-400 mt-2">By <span className="text-zinc-200">{project.ownerName}</span></p>
+                        <Link to={`/profiles/${project.ownerId}`} className="hover:underline">
+                            <p className="text-blue-400 mt-2 ">By <span>{project.ownerName}</span></p>
+                        </Link>
                     </div>  
                     <span className="bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-sm border border-blue-500/20">
                         {project.status}

@@ -28,8 +28,9 @@ export const updateProfile = async (req: Request, res: Response) => {
     }
 }
 
-export const getMyProfile = async (req: Request, res: Response) => {
-    const userId = (req as any).userId;
+export const getProfile = async (req: Request, res: Response) => {
+    const { id } = req.params;
+     const userId = Number(id);
 
     try {
         const userData = await db.query.users.findFirst({

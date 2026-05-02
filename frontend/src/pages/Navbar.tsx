@@ -8,6 +8,7 @@ export default function Navbar() {
     const location = useLocation();
     const [user, setUser] = useState<any>(null);
     const token = localStorage.getItem("token");
+    const currentUser = JSON.parse(localStorage.getItem('user_info') || "{}");
 
     useEffect(() => {
         const verifySession = async () => {
@@ -40,7 +41,7 @@ export default function Navbar() {
                 {user && (
                     <div className="flex items-center space-x-6">
                         <Link to="/projects" className="text-zinc-400 hover:text-white transition">Explore</Link>
-                        <Link to="/dashboard" className="text-zinc-400 hover:text-white transition">My Profile</Link>
+                        <Link to={`/profiles/${currentUser.id}`} className="text-zinc-400 hover:text-white transition">My Profile</Link>
                         
                         <NotificationBell />
 

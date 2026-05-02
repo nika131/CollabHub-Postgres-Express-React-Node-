@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { updateProfile, getMyProfile, updateAvatar } from "../controllers/profileController.js";
+import { updateProfile, getProfile, updateAvatar } from "../controllers/profileController.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { upload } from "../config/cloudinary.js";
 import { validate } from "../middleware/validate.js";
@@ -9,7 +9,7 @@ const router = Router();
 
 router.put("/", authenticate, validate(updateProfileSchema), updateProfile);
 
-router.get("/me", authenticate, getMyProfile);
+router.get("/:id", authenticate, getProfile);
 
 router.patch("/avatar", authenticate, upload.single('avatar'), updateAvatar);
 

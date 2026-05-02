@@ -6,6 +6,7 @@ import { TagInput } from "../common/TagInput";
 import { TECH_SKILLS } from "../../constants/techSkills";
 import { FormInput } from "../common/FormInput";
 import { FormTextArea } from "../common/FormTextArea";
+import { useParams } from "react-router-dom";
 
 interface ProfileSectionProps {
     profile: any,
@@ -16,6 +17,8 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const { userId } = useParams()
+    const currentUser = JSON.parse(localStorage.getItem('user_info') || '{}');
     const [formData, setFormData] = useState({
         fullName: '',
         bio: '',
@@ -33,6 +36,8 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
             })
         }
     }, [profile]);
+
+    const isOwner = String(currentUser.id) === String(userId);
 
     const handleSave = async () => {
         setLoading(true);
@@ -68,19 +73,35 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
         }
     };
 
+    console.log("gebugprofile:", {
+        cuurruserId: currentUser.id,
+        userId: userId,
+        match: currentUser.id === userId,
+        typeofcurruser: typeof currentUser.id,
+        typeuserId: typeof userId
+    })
+
     return(
         <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">My Profile</h2>
-                <button 
-                    onClick={() => setIsEditing(!isEditing)}
-                    disabled={loading}
-                    className="text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white px-4 py-2 rounded-lg transition border border-zinc-700">
-                    {isEditing ? 'Cancel' : 'Edit Profile'}
-                </button>
-            </div>
+            {isOwner? 
+                (
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold">My Profile</h2>
+                        <button 
+                            onClick={() => setIsEditing(!isEditing)}
+                            disabled={loading}
+                            className="text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white px-4 py-2 rounded-lg transition border border-zinc-700">
+                            {isEditing ? 'Cancel' : 'Edit Profile'}
+                        </button>   
+                    </div>
+                ) : (
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold">Profile</h2>  
+                    </div>
+                )
+            }
 
-            {isEditing ? (
+            {isOwner && isEditing ? (
                 <div className="space-y-4">
                     <label className="block text-sm text-zinc-500 mb-1">Full Name</label>
                     <FormInput
