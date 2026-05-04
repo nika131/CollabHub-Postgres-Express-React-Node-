@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { AvatartUpload } from "./AvatarUpload";
@@ -73,13 +73,9 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
         }
     };
 
-    console.log("gebugprofile:", {
-        cuurruserId: currentUser.id,
-        userId: userId,
-        match: currentUser.id === userId,
-        typeofcurruser: typeof currentUser.id,
-        typeuserId: typeof userId
-    })
+    const renderCount = useRef(0);
+    renderCount.current += 1;
+    console.log("debuginprofilesection Render:", renderCount.current);
 
     return(
         <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
@@ -148,7 +144,9 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
                     <div className="flex items-center space-x-4">
                         <AvatartUpload
                             currentItem={profile?.profilePicUrl}
-                            onUpdate={() => onUpdate()}
+                            onUpdate={(newUrl) => {
+                                setFormData(prev => ({ ...prev, profilePicUrl: newUrl }));    
+                            }}
                         />
 
                         <div>

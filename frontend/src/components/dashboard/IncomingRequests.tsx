@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -74,6 +74,9 @@ export const IncomingRequests = () => {
         );
     }
 
+    const renderCount = useRef(0);
+    renderCount.current += 1;
+    console.log("debugincominrequest Render:", renderCount.current);
 
     return (
         <div className="space-y-4">

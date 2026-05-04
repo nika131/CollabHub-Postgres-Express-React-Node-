@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useCallback, useRef} from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { FormInput } from "../common/FormInput";
@@ -42,21 +42,25 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
         })) || [{ title: '', seatsTotal: 1 }]
     });
 
-    const handleRoleChange = (index: number, field: 'title' | 'seatsTotal', value: string | number) => {
-        const newRoles = [...projectData.roles];
-        newRoles[index] = { ...newRoles[index], [field]: value };
-        setProjectData({ ...projectData, roles: newRoles });
-    };
+    const handleRoleChange = useCallback((index: number, field: 'title' | 'seatsTotal', value: string | number) => {
+        setProjectData(prev => {
+            const newRoles = [...prev.roles];
+            newRoles[index] = { ...newRoles[index], [field]: value };
+            return { ...prev, roles: newRoles };
+        });
+    }, []);
 
-    const handleAddRole = () => {
-        setProjectData({ ...projectData, roles: [...projectData.roles, { title: '', seatsTotal: 1 }] });
-    };
+    const handleAddRole = useCallback(() => {
+        setProjectData( prev => ({ ...projectData, roles: [...prev.roles, { title: '', seatsTotal: 1 }] }));
+    }, []);
 
-    const handleRemoveRole = (index: number) => {
-        if (projectData.roles.length === 1) return; 
-        const newRoles = projectData.roles.filter((_, i) => i !== index);
-        setProjectData({ ...projectData, roles: newRoles });
-    };
+    const handleRemoveRole = useCallback((index: number) => {
+        setProjectData(prev => {
+            if (prev.roles.length === 1) return prev; 
+            const newRoles = prev.roles.filter((_, i) => i !== index);
+            return { ...prev, roles: newRoles };
+        });
+    }, []);
 
 
     const handleSubmit = async () => {
@@ -101,6 +105,9 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
         }
     };
 
+    const renderCount = useRef(0);
+    renderCount.current += 1;
+    console.log("debugprojectform Render:", renderCount.current);
     return (
         <div className="bg-zinc-800 p-4 rounded-xl mb-8 space-y-4 border border-zinc-700 animate-in fade-in slide-in-from-top-4">
             <h3 className="text-lg font-bold text-white mb-2">Create New project</h3>

@@ -2,7 +2,7 @@ import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, notifications, project_roles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, and, ne, sql } from "drizzle-orm";
 import { AppError } from "../utils/AppError.js";
 import { io, userTOSocket } from "../index.js";
 
@@ -156,7 +156,7 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
 
             await tx.update(project_roles)
                 .set({
-                    seatsFilled: newFillCount,
+                    seatsFilled: sql`${project_roles.seatsFilled} + 1`,
                     status: isNowFilled ? 'filled' : 'open'
                 })
                 .where(eq(project_roles.id, appData.roleId));

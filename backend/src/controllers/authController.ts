@@ -7,6 +7,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/AppError.js';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto'
+import { INVALID } from 'zod/v3';
 
 export const registerUser = async (req: Request, res: Response) => {
     const { fullName, email, password } = req.body;
@@ -68,8 +70,7 @@ export const loginUser = async (req: Request, res: Response) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, salt);
+    const hashedRefreshToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
 
     await db.insert(refreshTokens).values({
         jti,
@@ -99,10 +100,12 @@ export const refresh = async (req: AuthRequest, res: Response, next: NextFunctio
 
         const decoded = jwt.verify(oldRefreshToken, process.env.REFRESH_SECRET!) as { userId: number, jti: string};
         
+        
         const [tokenRecord] = await db.select()
             .from(refreshTokens)
             .where(eq(refreshTokens.jti, decoded.jti));
 
+        
         if (!tokenRecord || tokenRecord.isRevoked) {
             if (tokenRecord) {
                 await db.update(refreshTokens)
@@ -112,8 +115,10 @@ export const refresh = async (req: AuthRequest, res: Response, next: NextFunctio
             throw new AppError("Security breach detected. Please login again.", 403)
         }
 
-        const isMatch = await bcrypt.compare(oldRefreshToken, tokenRecord.hashedToken );
-        if (!isMatch) throw new AppError("Invalid token authenticated", 403);
+        const incomingHash = crypto.createHash('sha256').update(oldRefreshToken).digest('hex');
+        if (incomingHash !== tokenRecord.hashedToken) {
+            throw new AppError("Invalid token authenticated", 403);
+        }
 
         const newJti = uuidv4();
         const newAccessToken = jwt.sign(
@@ -127,8 +132,7 @@ export const refresh = async (req: AuthRequest, res: Response, next: NextFunctio
             { expiresIn: "1d"},
         );
 
-        const newHashedRefresh = await bcrypt.hash(newRefreshToken, 10);
-
+        const newHashedRefresh = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
         await db.transaction(async (tx) => {
             await tx.update(refreshTokens)
                 .set({ isRevoked: true })

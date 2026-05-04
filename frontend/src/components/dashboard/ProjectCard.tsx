@@ -1,8 +1,9 @@
+import { memo, useRef } from "react";
 import api from "../../api/axios"
 import toast from "react-hot-toast"
 import { Link } from "react-router-dom";
 
-export const ProjectCard = ({ project, onDelete, showDelete = false }: any) => {
+export const ProjectCard = memo(({ project, onDelete, showDelete = false }: any) => {
      const handleDelete = async () => {
         if (!window.confirm("Are you sure? This action is permanent.")) return;
 
@@ -14,6 +15,11 @@ export const ProjectCard = ({ project, onDelete, showDelete = false }: any) => {
 
         }
     };
+
+
+    const renderCount = useRef(0);
+    renderCount.current += 1;
+    console.log("debugprojectcard Render:", renderCount.current);
 
     return (
         <div key={project.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl hover:border-zinc-700 transaction flex flex-col justify-between">
@@ -56,4 +62,4 @@ export const ProjectCard = ({ project, onDelete, showDelete = false }: any) => {
             </div>
         </div>
     );
-};
+});

@@ -35,7 +35,7 @@ export default function Login(){
             localStorage.setItem('user_info', JSON.stringify(response.data.user));
 
             toast.success("Welcome back!")
-            navigate('/dashboard');
+            navigate(`/profiles/${response.data.user.id}`);
         }catch (err: any){
             const responseData = err.response?.data
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../api/axios";
 import { ProjectCard } from "../components/dashboard/ProjectCard";
 import { ProjectForm } from "../components/dashboard/ProjectForm";
@@ -7,6 +7,8 @@ import { IncomingRequests } from "../components/dashboard/IncomingRequests";
 import { Loader } from "../components/common/Loader";
 import { useParams } from "react-router-dom";
 import { InfoDahboardBox } from "../components/dashboard/infoDashboardBox";
+import { useMemo, useRef } from "react";
+
 
 export default function Dashboard() {
     const [profile, setProfile] = useState<any>(null);
@@ -16,7 +18,41 @@ export default function Dashboard() {
     const [requestTrigger, setRequestTrigger] = useState(0);
     const [joinedProjects, setJoinedProjects] = useState<any[]>([])
     const { userId } = useParams()
-    const currentUser = JSON.parse(localStorage.getItem('user_info') || '{}');
+    const currentUser = useMemo(() =>JSON.parse(localStorage.getItem('user_info') || '{}'), []);
+
+
+    const refreshAllData = () => {
+        fetchProjects(),
+        setRequestTrigger(prev => prev + 1) // to trigger refresh in IncomingRequests
+    }
+
+    const fetchProfile = useCallback(async () => {
+        try {
+            const res = await api.get(`/profiles/${userId}`);
+            setProfile(res.data);
+        }catch (err) {
+            console.error("Failed to fetch profile", err);
+        }
+    }, [userId]);
+
+    const fetchProjects = useCallback(async () => {
+        try {
+            const res = await api.get(`/projects/${userId}/all`);
+            setProjects(res.data);
+        }catch (err) { 
+            console.error("Failed to fetch projects", err); 
+        }
+        setLoading(false)
+    }, [userId]);           
+    
+    const fetchJoinedProjects = useCallback(async () => {
+        try{ 
+            const res = await api.get('/projects/participatingProjects');
+            setJoinedProjects(res.data.acceptedApplications || res.data);
+        }catch (err) {
+             console.error("Failed to fetch projects", err); 
+        }
+    }, [])
 
     useEffect(() => {
         setProfile(null),
@@ -25,44 +61,15 @@ export default function Dashboard() {
         fetchJoinedProjects(),
         fetchProfile(),
         fetchProjects()
-    }, [userId]);
-
-    const refreshAllData = () => {
-        fetchProjects(),
-        setRequestTrigger(prev => prev + 1) // to trigger refresh in IncomingRequests
-    }
-
-    const fetchProfile = async () => {
-        try {
-            const res = await api.get(`/profiles/${userId}`);
-            setProfile(res.data);
-        }catch (err) {
-            console.error("Failed to fetch profile", err);
-        }
-    };
-
-    const fetchProjects = async () => {
-        try {
-            const res = await api.get(`/projects/${userId}/all`);
-            setProjects(res.data);
-
-        }catch (err) { 
-            console.error("Failed to fetch projects", err); 
-        }
-        setLoading(false)
-    }                
-    
-    const fetchJoinedProjects = async () => {
-        try{
-            const res = await api.get('/projects/participatingProjects');
-            setJoinedProjects(res.data.acceptedApplications || res.data);
-        }catch (err) {
-             console.error("Failed to fetch projects", err); 
-        }
-    }
+    }, [userId, fetchJoinedProjects, fetchProfile, fetchProjects]);
 
     const isOwner = String(currentUser.id) === String(userId);
+    
+    const rerendercount = useRef(0); 
+    rerendercount.current += 1; 
+    console.log("debugDahboared", rerendercount.current)
 
+   
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8"> 
