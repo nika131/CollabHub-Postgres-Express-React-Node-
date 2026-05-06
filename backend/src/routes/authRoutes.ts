@@ -4,12 +4,13 @@ import { registerSchema, loginSchema } from "../validations/authSchema.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { getMe } from "../controllers/authController.js";
 import { validate } from "../middleware/validate.js";
+import { strictLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
 
-router.post("/register", validate(registerSchema), registerUser);
+router.post("/register", strictLimiter, validate(registerSchema), registerUser);
 
-router.post("/login", validate(loginSchema), loginUser);
+router.post("/login", strictLimiter, validate(loginSchema), loginUser);
 
 router.post("/refresh", refresh);
 

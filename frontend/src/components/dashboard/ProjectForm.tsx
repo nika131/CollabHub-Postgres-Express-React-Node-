@@ -1,4 +1,4 @@
-import { useState , useCallback, useRef} from "react";
+import { useState , useCallback } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { FormInput } from "../common/FormInput";
@@ -105,9 +105,6 @@ export const ProjectForm = ({ onSuccess, onCancel, initialData, projectId }: Pro
         }
     };
 
-    const renderCount = useRef(0);
-    renderCount.current += 1;
-    console.log("debugprojectform Render:", renderCount.current);
     return (
         <div className="bg-zinc-800 p-4 rounded-xl mb-8 space-y-4 border border-zinc-700 animate-in fade-in slide-in-from-top-4">
             <h3 className="text-lg font-bold text-white mb-2">Create New project</h3>

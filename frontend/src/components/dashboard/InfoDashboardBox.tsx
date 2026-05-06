@@ -1,11 +1,6 @@
-import { useRef } from "react";
 import { Link } from "react-router-dom";
 
 export const InfoDahboardBox = ({projects} : {projects: any[] }) => {
-
-    const renderCount = useRef(0);
-    renderCount.current += 1;
-    console.log("debuginfodashboared Render:", renderCount.current);
 
    return (
         <div className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-2xl h-fit">

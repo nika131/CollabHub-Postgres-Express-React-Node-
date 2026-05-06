@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 
@@ -30,10 +30,6 @@ export const AvatartUpload = ({ currentItem, onUpdate }: AvatarUploadProps) => {
             setUploading(false);
         }
     }
-
-const renderCount = useRef(0);
-renderCount.current += 1;
-console.log("debugAvatar Render:", renderCount.current);
 
     return (
         <div className="relative group w-24 h-24">

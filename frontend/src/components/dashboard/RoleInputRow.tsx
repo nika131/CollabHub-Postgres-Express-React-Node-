@@ -58,10 +58,6 @@ export const RoleInputRow = memo(({
         }
     };
 
-    const renderCount = useRef(0);
-    renderCount.current += 1;
-    console.log(`debugRoleInput [${index}] Render:`, renderCount.current);
-
     return (
         <div ref={wrapperRef} className="flex gap-2 items-start w-full">
             

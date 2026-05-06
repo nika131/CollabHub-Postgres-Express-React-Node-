@@ -7,7 +7,7 @@ import { IncomingRequests } from "../components/dashboard/IncomingRequests";
 import { Loader } from "../components/common/Loader";
 import { useParams } from "react-router-dom";
 import { InfoDahboardBox } from "../components/dashboard/infoDashboardBox";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 
 
 export default function Dashboard() {
@@ -64,11 +64,6 @@ export default function Dashboard() {
     }, [userId, fetchJoinedProjects, fetchProfile, fetchProjects]);
 
     const isOwner = String(currentUser.id) === String(userId);
-    
-    const rerendercount = useRef(0); 
-    rerendercount.current += 1; 
-    console.log("debugDahboared", rerendercount.current)
-
    
 
     return (

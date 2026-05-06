@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { AvatartUpload } from "./AvatarUpload";
@@ -72,10 +72,6 @@ export const ProfileSection = ({ profile, onUpdate }: ProfileSectionProps) => {
             setLoading(false);
         }
     };
-
-    const renderCount = useRef(0);
-    renderCount.current += 1;
-    console.log("debuginprofilesection Render:", renderCount.current);
 
     return(
         <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">

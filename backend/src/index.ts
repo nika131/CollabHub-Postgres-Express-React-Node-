@@ -10,11 +10,13 @@ import { globalErrorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cookieParser from 'cookie-parser';
+import { globalLimiter } from './middleware/rateLimiter.js';
 
 
 console.log("JWT Secret Loaded:", !!process.env.JWT_SECRET);
 
 const app = express();
+app.set('trust proxy', 1);
 const httpServer = createServer(app);
 app.use(cookieParser());
 
@@ -54,19 +56,13 @@ io.on("connection", (Socket) => {
             userTOSocket.delete(userId);
             socketToUser.delete(Socket.id);
         }
-        /*
-        for (let[userId, socketId] of userSocketMap.entries()) {
-            if (socketId === Socket.id) {
-                userSocketMap.delete(userId);
-                break;
-            }
-        }*/
         console.log(`Device disconnected: ${Socket.id}`);
     });
 })
 
 app.use(express.json());
 
+app.use('/api', globalLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/profiles", profileRoutes);
