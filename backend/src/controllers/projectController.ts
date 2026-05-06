@@ -1,13 +1,12 @@
-import { application, type Response } from "express";
+import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, project_roles, profiles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and, ilike, sql, or, not, lt, desc, arrayOverlaps, Param } from "drizzle-orm";
+import { eq, and, not, lt, desc, arrayOverlaps, inArray } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
 import { cursorPagination } from "../utils/pagination.js";
 import { getProjectsSearchUtils } from "../utils/search.js";
-import { any } from "zod";
 
 export const createProject = async (req: AuthRequest, res: Response) => {
     const currentUserId = Number(req.userId);
@@ -25,7 +24,7 @@ export const createProject = async (req: AuthRequest, res: Response) => {
             throw new AppError("Failed to initialize project headder", 500)
         }
 
-        const roleInserts = roles.map((role: { title: string; seatsTotal: number }) => ({
+        const roleInserts = (roles || []).map((role: { title: string; seatsTotal: number }) => ({
             projectId: newProject?.id,
             title: role.title,
             seatsTotal: role.seatsTotal,
@@ -50,6 +49,10 @@ export const DeleteProject = async (req: AuthRequest, res: Response) => {
         .where(and(eq(projects.id, Number(id)), eq(projects.ownerId, userId)))
         .returning();
 
+    if(deleteRows.length === 0) {
+        throw new AppError("Project not found or you are not autorized to delete it", 404);
+    }
+
     res.json({
         message: "Project deleted successfully",
         deletedProject: deleteRows[0]
@@ -73,19 +76,28 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
 
         if (roles && roles.length > 0) {
             for (const role of roles) {
-                if (role.id){
-                    const [currentRole] = await tx.select()
+                const rolesToUpdate = roles.filter((r: any) => r.id);
+                const rolesToInsert = roles.filter((r: any) => !r.id);
+
+                let existingRoles: any[] = [];
+                if (rolesToUpdate.length > 0){
+                    const roleIds = rolesToUpdate.map((r: any) => r.id);
+                    existingRoles = await tx.select()
                         .from(project_roles)
-                        .where(eq(project_roles.id, role.id))
+                        .where(inArray(project_roles.id, roleIds));
+                }
+
+                const updatePromises = rolesToUpdate.map((role: any) => {
+                    const currentRole = existingRoles.find(r => r.id === role.id);
 
                     if (currentRole) {
                         if (currentRole.seatsFilled > role.seatsTotal) {
-                            throw new AppError(`Can not reduce the number of seats below the number of accepted applicants (${currentRole.seatsFilled})`, 400);
+                            throw new AppError(`Can not reduce the number of seats below the number of accepted applicants (${currentRole.seatsFilled})`, 400)
                         }
 
                         const isNowOpen = role.seatsTotal > currentRole.seatsFilled;
 
-                        await tx.update(project_roles)
+                        return tx.update(project_roles)
                             .set({ 
                                 title: role.title, 
                                 seatsTotal: role.seatsTotal,
@@ -93,18 +105,25 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
                             })
                             .where(eq(project_roles.id, role.id));
                     }
-                }else {
-                    await tx.insert(project_roles).values({
+                    return Promise.resolve();
+                });
+
+                let insertPromise: Promise<any> = Promise.resolve();
+                if (rolesToInsert.length > 0) {
+                    const insertPayload = rolesToInsert.map((role: any) => ({
                         projectId: updatedProject.id,
                         title: role.title,
                         seatsTotal: role.seatsTotal
-                    });
+                    }));
+                    insertPromise = tx.insert(project_roles).values(insertPayload);
                 }
+
+                await Promise.all([...updatePromises, insertPromise]);
             }
         }
 
         return updatedProject;
-    })
+    });
     
     res.json({ message: "Project updated", project: result });
 };
@@ -208,16 +227,6 @@ export const getProjectAndUserInfobyId = async (req: AuthRequest, res: Response)
         .from(project_roles)
         .where(eq(project_roles.projectId, Number(id)));
 
-    const [isMember] = await db.select()
-        .from(applications)
-        .where(
-            and(
-                eq(applications.projectId, projectAndUserInfo.id), 
-                eq(applications.userId, currentUserId), 
-                eq(applications.status, 'accepted')
-            )
-        )
-
     interface ProjectMember {
         membername: string | null;
         memberId: number | string;
@@ -226,7 +235,7 @@ export const getProjectAndUserInfobyId = async (req: AuthRequest, res: Response)
 
     let projectMembers: ProjectMember[] = [];
 
-    if(currentUserId === projectAndUserInfo.ownerId || isMember) {
+    if(currentUserId === projectAndUserInfo.ownerId || isAcceptedMember) {
         projectMembers = await db.select({ 
             membername: users.fullName,
             memberId: applications.userId, 
