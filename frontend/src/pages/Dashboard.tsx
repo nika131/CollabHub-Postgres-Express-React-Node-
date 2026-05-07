@@ -6,7 +6,7 @@ import { ProfileSection } from "../components/dashboard/ProfileSection";
 import { IncomingRequests } from "../components/dashboard/IncomingRequests";
 import { Loader } from "../components/common/Loader";
 import { useParams } from "react-router-dom";
-import { InfoDahboardBox } from "../components/dashboard/infoDashboardBox";
+import { InfoDahboardBox } from "../components/dashboard/InfoDashboardBox";
 import { useMemo } from "react";
 
 

@@ -2,7 +2,7 @@ import { type Response } from "express";
 import { db } from "../db/dbConnection.js";
 import { projects, users, applications, project_roles, profiles } from "../db/schema.js";
 import type { AuthRequest } from "../middleware/authMiddleware.js";
-import { eq, and, not, lt, desc, arrayOverlaps, inArray } from "drizzle-orm";
+import { eq, and, not, lt, or, desc, arrayOverlaps, inArray, sql } from "drizzle-orm";
 import { baseProjectSelection } from "../db/selectors.js";
 import { AppError } from "../utils/AppError.js";
 import { cursorPagination } from "../utils/pagination.js";
@@ -129,16 +129,17 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
 };
 
 export const getAllProjects = async (req: AuthRequest, res: Response) => {
-    const { search, cursor, limit = 10 } = req.query;
+    const { search, cursor, cursorRank, limit = 10 } = req.query;
     const parsedLimit = Number(limit);
 
     const statusFilter = not(eq(projects.status, 'closed'));
     const filters = [statusFilter];
 
     let sorting = [desc(projects.id)]
+    let searchUtils: any = null;
 
     if (typeof search == 'string' && search.trim() !== ''){
-        const searchUtils = getProjectsSearchUtils(search);
+        searchUtils = getProjectsSearchUtils(search);
         
         if (searchUtils) {
             filters.push(searchUtils.condition);
@@ -147,17 +148,32 @@ export const getAllProjects = async (req: AuthRequest, res: Response) => {
     }
 
     if (cursor) {
-        filters.push(lt(projects.id, Number(cursor)));
+        if(searchUtils && cursorRank){
+            const compositeFilter = or(
+                lt(searchUtils.rank, Number(cursorRank)),
+                and(
+                    eq(searchUtils.rank, Number(cursorRank)),
+                    lt(projects.id, Number(cursor))
+                )
+            );
+            
+            if (compositeFilter) {
+                filters.push(compositeFilter);
+            }
+        } else { 
+            filters.push(lt(projects.id, Number(cursor)));
+        }
     }
 
-    const query = db.select(baseProjectSelection)
+    const query = db.select({
+            ...baseProjectSelection,   
+            rank: searchUtils ? searchUtils.rank : sql`0`
+        })
         .from(projects)
         .leftJoin(users, eq(projects.ownerId, users.id))
         .where(and(...filters))
         .orderBy(...sorting)
         .limit(parsedLimit + 1);
-
-    console.log("DEBUG SQL:", query.toSQL());
 
     const allProjects = await query
 

@@ -36,7 +36,7 @@ export default function Navbar() {
     return (
         <nav className="bg-zinc-900 border-b border-zinc-800 p-4">
             <div className="max-w-6xl mx-auto flex justify-between items-center">
-                <Link to="/dashboard" className="text-xl font-bold text-blue-500">CollabHub</Link>
+                <Link to={`/profiles/${currentUser.id}`} className="text-xl font-bold text-blue-500">CollabHub</Link>
                 
                 {user && (
                     <div className="flex items-center space-x-6">
