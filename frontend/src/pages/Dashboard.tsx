@@ -21,11 +21,6 @@ export default function Dashboard() {
     const currentUser = useMemo(() =>JSON.parse(localStorage.getItem('user_info') || '{}'), []);
 
 
-    const refreshAllData = () => {
-        fetchProjects(),
-        setRequestTrigger(prev => prev + 1) // to trigger refresh in IncomingRequests
-    }
-
     const fetchProfile = useCallback(async () => {
         try {
             const res = await api.get(`/profiles/${userId}`);
@@ -45,6 +40,7 @@ export default function Dashboard() {
         setLoading(false)
     }, [userId]);           
     
+    
     const fetchJoinedProjects = useCallback(async () => {
         try{ 
             const res = await api.get('/projects/participatingProjects');
@@ -54,6 +50,13 @@ export default function Dashboard() {
         }
     }, [])
 
+    const refreshAllData = useCallback(() => {
+        fetchProjects(),
+        fetchJoinedProjects(),
+        fetchProfile(),
+        setRequestTrigger(prev => prev + 1) // to trigger refresh in IncomingRequests
+    }, [fetchProjects, fetchJoinedProjects, fetchProfile]);
+
     useEffect(() => {
         setProfile(null),
         setLoading(true),
@@ -62,6 +65,20 @@ export default function Dashboard() {
         fetchProfile(),
         fetchProjects()
     }, [userId, fetchJoinedProjects, fetchProfile, fetchProjects]);
+
+    useEffect(() => {
+        console.log("Dashboard heard the sync event!");
+        const updateRequests = () => setRequestTrigger(prev => prev + 1);
+        window.addEventListener("refresh_requests_only", updateRequests);
+        return () => window.removeEventListener("refresh_requests_only", updateRequests);
+    }, [])
+
+    useEffect(() => {
+        console.log("Dashboard heard the sync event!");
+        const updateJoined = () => fetchJoinedProjects();
+        window.addEventListener("refresh_joined_projects_only", updateJoined);
+        return () => window.removeEventListener("refresh_joined_projects_only", updateJoined);
+    }, [fetchJoinedProjects]);
 
     const isOwner = String(currentUser.id) === String(userId);
    
@@ -140,7 +157,9 @@ export default function Dashboard() {
                 {/* --- 5. PEOJECT JOIN REQUESTS --- */}
                 <div>
                     {isOwner && (
-                        <IncomingRequests key={requestTrigger}/>
+                        <IncomingRequests 
+                            key={requestTrigger}
+                            />
                     )}
                 </div>
 

@@ -44,6 +44,14 @@ export const NotificationBell = () => {
             });
             setUnreadCount(perv => perv + 1)
             setNotifications(perv => [{ ...data, id: Date.now() }, ...perv])
+
+            console.log("Socket received notification:", data);
+            
+            if (data.type === 'new_request') {
+                window.dispatchEvent(new Event("refresh_requests_only"));
+            } else if (data.type === 'accepted') {
+                window.dispatchEvent(new Event("refresh_joined_projects_only"));
+            }
         });
 
         return () => {

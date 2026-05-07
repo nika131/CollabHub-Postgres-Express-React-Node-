@@ -1,5 +1,11 @@
 # CollabHub 🚀
 
+
+
+![Real-time demo](./pics/gif.gif)
+
+
+
 CollabHub is a full-stack developer collaboration platform built with a strict **TypeScript-first** approach. It bridges the gap between idea generation and team execution by enabling developers to publish technical projects, define specific engineering roles, and manage team assembly through a real-time, event-driven architecture.
 
 ## 📖 Table of Contents
@@ -15,11 +21,16 @@ CollabHub is a full-stack developer collaboration platform built with a strict *
 
 ## 🎯 Core Features
 
+
+![projectCard](./pics/projectcard.png)
+
 ### 1. Advanced Real-Time Collaboration
 * **Role-Based Matching:** Project owners define specific technical needs (e.g., "DevOps," "Frontend") with explicit seat counts. The system tracks capacity in real-time.
 * **Cascade Resolution Engine:** Accepting an applicant triggers a "Soft Choice" state machine. If the final seat is filled, the system can automatically bulk-reject all other pending applicants and notify them instantly via WebSockets.
 * **The Secure Vault:** Integrated Discord/Slack "Vault" links that are cryptographically restricted at the database level and revealed only to accepted team members.
 * **Dynamic Status Synchronization:** Role capacities and UI styling update dynamically across the client as seats are filled, preventing over-booking and stale views.
+
+![Dahboared](./pics/dashboard.png)
 
 ### 2. High-Performance UI & Dashboards
 * **Unified Developer Dashboard:** A centralized control panel featuring a dedicated "Participating Projects" widget, giving users instant visibility into external projects they are actively contributing to.
@@ -40,6 +51,9 @@ CollabHub is a full-stack developer collaboration platform built with a strict *
 ### 5. Global UX & Decision Gates
 * **Confirmation Gates (409 Conflict):** A specialized "Confirmation-Required" flow for destructive actions. When filling a role, the UI prompts the owner to choose between manual cleanup or automated cascade rejection.
 * **Optimistic UI:** Local state updates immediately upon action, providing a high-performance, zero-latency feel while the backend handles complex multi-table transactions.
+
+
+![explorePage](./pics/explorepage.png)
 
 ### 6. Intelligent Discovery & Profiles
 * **Dynamic Explore Engine:** A dedicated discovery page featuring a toggleable "Global" feed and a personalized "For You" feed. Built with an infinite-scroll style cursor pagination system to efficiently fetch 10 heavily-sorted projects at a time without overwhelming the DOM.
