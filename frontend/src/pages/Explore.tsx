@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../api/axios";
 import { ProjectCard } from "../components/dashboard/ProjectCard";
 import { Loader } from "../components/common/Loader";
+import { useDebounce } from "../hooks/useDebounce";
 
 export default function Explore() {
     const [projects, setProjects ] = useState<any[]>([]);
@@ -12,6 +13,7 @@ export default function Explore() {
     const [viewMode, setViewMode] = useState<'all' | 'recommended'>('all');
     const [emptyMessage, setEmptyMessage] = useState<string | null>(null);
 
+    const debouncedSearchTerm = useDebounce(searchQuery, 500);
 
     const fetchInitialProjects = async (query= "", mode = viewMode) => {
         setLoading(true);
@@ -40,7 +42,7 @@ export default function Explore() {
 
         try {
             const endPoint = viewMode === 'recommended' ? '/projects/recommended' : '/projects/all';
-            const res = await api.get(`${endPoint}?search=${searchQuery}&limit=10&cursor=${nextCursor}`);
+            const res = await api.get(`${endPoint}?search=${debouncedSearchTerm}&limit=10&cursor=${nextCursor}`);
 
             setProjects(prev => [...prev, ...(res.data.data || [])]);
             setNextCursor(res.data.nextCursor);
@@ -52,8 +54,8 @@ export default function Explore() {
     };
 
     useEffect(() => {
-        fetchInitialProjects(searchQuery, viewMode);
-    }, [searchQuery, viewMode]);
+        fetchInitialProjects(debouncedSearchTerm, viewMode);
+    }, [debouncedSearchTerm, viewMode]);
    
 
     const handleProjectDeleted = (deleteProjectId: number) => {
