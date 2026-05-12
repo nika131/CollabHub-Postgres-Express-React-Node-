@@ -162,21 +162,14 @@ export const respondToJoinRequest = async (req: AuthRequest, res: Response) => {
                 .where(eq(project_roles.id, appData.roleId));
             
             if (isNowFilled && confirmAutoReject === true){
-                await tx.update(applications)
-                        .set({status: 'rejected'})
-                        .where(and(
-                            eq(applications.roleId, appData.roleId),
-                            eq(applications.status, 'pending'),
-                            ne(applications.id, appData.id)
-                        ));
-
-                cascadedRejections = await tx.select({ userId: applications.userId })
-                    .from(applications)
-                    .where(and(
-                        eq(applications.roleId, appData.roleId),
-                        eq(applications.status, 'rejected'),
-                        ne(applications.id, appData.id)
-                ));
+                cascadedRejections = await tx.update(applications)
+                .set({ status: 'rejected' })
+                .where(and(
+                    eq(applications.roleId, appData.roleId),
+                    eq(applications.status, 'pending'),
+                    ne(applications.id, appData.id)
+                ))
+                .returning({ userId: applications.userId });
 
                 if (cascadedRejections.length > 0) {
                     const bulkNotifications = cascadedRejections.map(rejectedUser => ({
